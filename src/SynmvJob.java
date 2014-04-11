@@ -9,6 +9,8 @@ import javax.swing.border.LineBorder;
 
 public class SynmvJob {
 
+	private static SynmvJob chosen = null;
+	
 	private Runnable callback;
 
 	private static final int height = 60;
@@ -97,6 +99,7 @@ public class SynmvJob {
 			
 			slots[i].addMouseListener(new MouseListener() {
 				public void mouseClicked(MouseEvent e) {
+					
 				}
 
 				@Override
@@ -122,6 +125,15 @@ public class SynmvJob {
 				@Override
 				public void mousePressed(MouseEvent e) {
 					mouseHold = true;
+					if(chosen != null) {
+						for(JLabel slot : chosen.slots) {
+							slot.setBackground(Color.GRAY);
+						}
+					}
+					chosen = SynmvJob.this;
+					for(JLabel slot : chosen.slots) {
+						slot.setBackground(Color.RED);
+					}
 				}
 
 				@Override

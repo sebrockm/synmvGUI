@@ -132,39 +132,41 @@ public class SynmvFrame extends JFrame {
 				if(e.getButton() == MouseEvent.BUTTON1) {
 					int ret = chooser.showOpenDialog(SynmvFrame.this);
 					if(ret == JFileChooser.APPROVE_OPTION) {
+						SynmvJob[] tmp = null;
 						try {
-							SynmvJob[] tmp = readJobsFromFile(chooser.getSelectedFile().getAbsolutePath());
-							if(tmp != null) {
-								if(jobs != null) {
-									for(SynmvJob job : jobs) {
-										if(job != null) {
-											job.removeFromParent();
-										}
-									}
-								}
-								jobs = tmp;
-								
-								for(int i = 0; i < jobs.length; i++) {
-									jobs[i].addToParent();
-									jobs[i].setCallback(new Runnable(){
-
-										@Override
-										public void run() {
-											float cmax = 0;
-											for(SynmvJob job : jobs) {
-												if(job != null) {
-													job.setPositions();
-													cmax = Math.max(cmax, job.getOffset(job.getMachineCount()-1) + job.getLen(job.getMachineCount()-1));
-												}
-											}
-											label.setText("Cmax: " + cmax);
-										}
-										
-									});
-								}
-							}
+							tmp = readJobsFromFile(chooser.getSelectedFile().getAbsolutePath());
 						} catch (IOException e1) {
 							e1.printStackTrace();
+						}
+						if(tmp == null) {
+							return;
+						}
+						if(jobs != null) {
+							for(SynmvJob job : jobs) {
+								if(job != null) {
+									job.removeFromParent();
+								}
+							}
+						}
+						jobs = tmp;
+						
+						for(int i = 0; i < jobs.length; i++) {
+							jobs[i].addToParent();
+							jobs[i].setCallback(new Runnable(){
+
+								@Override
+								public void run() {
+									float cmax = 0;
+									for(SynmvJob job : jobs) {
+										if(job != null) {
+											job.setPositions();
+											cmax = Math.max(cmax, job.getOffset(job.getMachineCount()-1) + job.getLen(job.getMachineCount()-1));
+										}
+									}
+									label.setText("Cmax: " + cmax);
+								}
+								
+							});
 						}
 					}
 				}
