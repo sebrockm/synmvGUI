@@ -1,4 +1,5 @@
 import java.awt.Color;
+import java.awt.Component;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
 import javax.swing.JLabel;
@@ -93,7 +94,6 @@ public class SynmvJob {
 			slots[i].setVisible(true);
 			slots[i].setOpaque(true);
 			slots[i].setBorder(new LineBorder(Color.DARK_GRAY));
-			container.add(slots[i]);
 			
 			slots[i].addMouseListener(new MouseListener() {
 				public void mouseClicked(MouseEvent e) {
@@ -163,6 +163,7 @@ public class SynmvJob {
 			callback.run();
 		}
 	}
+
 	
 	public void swapWithPred() {
 		if(pred != null) {
@@ -192,5 +193,16 @@ public class SynmvJob {
 			next.swapWithPred();
 		}
 	}
-
+	
+	public void addToParent() {
+		for(JLabel slot : slots) {
+			parent.add(slot);
+		}
+	}
+	
+	public void removeFromParent() {
+		for(JLabel slot : slots) {
+			parent.remove(slot);
+		}
+	}
 }

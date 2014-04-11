@@ -114,8 +114,6 @@ public class SynmvFrame extends JFrame {
 		scroll.setViewportView(jobcontainer);
 		this.add(scroll);
 
-
-		//jobs = readJobsFromFile("bench_m3_n16_Cmax_Lmax.dat");
 		
 		jobcontainer.add(button);
 		button.setLocation(300, 400);
@@ -135,23 +133,35 @@ public class SynmvFrame extends JFrame {
 					int ret = chooser.showOpenDialog(SynmvFrame.this);
 					if(ret == JFileChooser.APPROVE_OPTION) {
 						try {
-							jobs = readJobsFromFile(chooser.getSelectedFile().getAbsolutePath());
-							for(int i = 0; i < jobs.length; i++) {
-								jobs[i].setCallback(new Runnable(){
-
-									@Override
-									public void run() {
-										float cmax = 0;
-										for(SynmvJob job : jobs) {
-											if(job != null) {
-												job.setPositions();
-												cmax = Math.max(cmax, job.getOffset(job.getMachineCount()-1) + job.getLen(job.getMachineCount()-1));
-											}
+							SynmvJob[] tmp = readJobsFromFile(chooser.getSelectedFile().getAbsolutePath());
+							if(tmp != null) {
+								if(jobs != null) {
+									for(SynmvJob job : jobs) {
+										if(job != null) {
+											job.removeFromParent();
 										}
-										label.setText("Cmax: " + cmax);
 									}
-									
-								});
+								}
+								jobs = tmp;
+								
+								for(int i = 0; i < jobs.length; i++) {
+									jobs[i].addToParent();
+									jobs[i].setCallback(new Runnable(){
+
+										@Override
+										public void run() {
+											float cmax = 0;
+											for(SynmvJob job : jobs) {
+												if(job != null) {
+													job.setPositions();
+													cmax = Math.max(cmax, job.getOffset(job.getMachineCount()-1) + job.getLen(job.getMachineCount()-1));
+												}
+											}
+											label.setText("Cmax: " + cmax);
+										}
+										
+									});
+								}
 							}
 						} catch (IOException e1) {
 							e1.printStackTrace();
