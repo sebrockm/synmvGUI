@@ -1,8 +1,13 @@
 import java.awt.Color;
+import java.awt.Point;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
+import javax.swing.JTextField;
+import javax.swing.SwingConstants;
 import javax.swing.border.LineBorder;
 
 
@@ -17,7 +22,9 @@ public class SynmvJob {
 	private static final int height = 60;
 	public static float factor = 10;
 	private final float[] times;
+	private final JTextField[] textFields;
 	private final JLabel[] slots;
+	private final JLabel number = new JLabel();
 	private final JPanel parent;
 	
 	private SynmvJob pred;
@@ -40,7 +47,7 @@ public class SynmvJob {
 		//find max
 		float len = 0;
 		for(int i = machine-futurePos; i < times.length; i++) {
-			len = Math.max(len, tmp.getLen(i));
+			len = Math.max(len, tmp.getTime(i));
 			if(tmp.pred == null) {
 				break;
 			}
@@ -67,25 +74,36 @@ public class SynmvJob {
 		return slots.length;
 	}
 	
-	public void setPositions() {
+	public void setLocations() {
 		int max = 0;
 		for(int i = 0; i < slots.length; i++) {
-			slots[i].setSize(Math.max(1, (int)Math.ceil(factor * getLen(i))), height);	
+			slots[i].setSize(Math.max(10, (int)Math.ceil(factor * getTime(i))), height);	
 			slots[i].setLocation(50+(int)(factor * getOffset(i)), 50+i*height);
 
 			max = Math.max(max, slots[i].getSize().width + slots[i].getLocation().x);
 			
 			parent.setSize((int) max, parent.getSize().height);
 			parent.setPreferredSize(parent.getSize());
+			
+			int y = slots[i].getSize().height / 2 - textFields[i].getSize().height / 2;
+			textFields[i].setLocation(0, y);
+			textFields[i].setSize(slots[i].getSize().width, textFields[i].getSize().height);
 		}
+		
+		number.setSize(slots[0].getSize());
+		Point loc = slots[0].getLocation();
+		loc.y -= number.getSize().height;
+		number.setLocation(loc);
+		number.setText("" + (countPredecessors()+1));
 	}
 	
 	public void setCallback(Runnable callback) {
 		this.callback = callback;
 		callback.run();
 	}
+
 	
-	public float getLen(int machine) {
+	public float getTime(int machine) {
 		return times[machine];
 	}
 	
@@ -93,7 +111,10 @@ public class SynmvJob {
 		this.id = id;
 		this.parent = container;
 		this.times = times;
+		this.number.setVisible(true);
+		this.number.setHorizontalAlignment(SwingConstants.CENTER);
 		slots = new JLabel[times.length];
+		textFields = new JTextField[times.length];
 		for(int i = 0; i < times.length; i++) {
 			slots[i] = new JLabel();
 			slots[i].setText("" + times[i]);
@@ -101,6 +122,14 @@ public class SynmvJob {
 			slots[i].setVisible(true);
 			slots[i].setOpaque(true);
 			slots[i].setBorder(new LineBorder(Color.DARK_GRAY));
+			slots[i].setHorizontalAlignment(SwingConstants.CENTER);
+			
+			textFields[i] = new JTextField(slots[i].getText());
+			slots[i].add(textFields[i]);
+			textFields[i].setVisible(false);
+			textFields[i].setSize(50, 20);
+			textFields[i].setHorizontalAlignment(SwingConstants.CENTER);
+			textFields[i].setFont(slots[i].getFont());
 			
 			slots[i].addMouseListener(new MouseListener() {
 				public void mouseClicked(MouseEvent e) {
@@ -134,10 +163,16 @@ public class SynmvJob {
 						for(JLabel slot : chosen.slots) {
 							slot.setBackground(Color.GRAY);
 						}
+						for(JTextField field : chosen.textFields) {
+							field.setVisible(false);
+						}
 					}
 					chosen = SynmvJob.this;
 					for(JLabel slot : chosen.slots) {
 						slot.setBackground(Color.RED);
+					}				
+					for(JTextField field : textFields) {
+						field.setVisible(true);
 					}
 				}
 
@@ -149,8 +184,27 @@ public class SynmvJob {
 					}
 				}
 			});
+			
+			final int ii = i;
+			textFields[i].addActionListener(new ActionListener() {	
+				@Override
+				public void actionPerformed(ActionEvent arg0) {
+					float t;
+					try {
+						t = Float.parseFloat(textFields[ii].getText());
+					} catch (NumberFormatException e) {
+						t = SynmvJob.this.times[ii];
+					}
+					
+					SynmvJob.this.times[ii] = t;
+					SynmvJob.this.slots[ii].setText("" + t);
+					if(callback != null) {
+						callback.run();
+					}
+				}
+			});
 		}
-		setPositions();
+		setLocations();
 		
 	}
 	
@@ -227,11 +281,36 @@ public class SynmvJob {
 		for(JLabel slot : slots) {
 			parent.add(slot);
 		}
+		parent.add(number);
 	}
 	
 	public void removeFromParent() {
 		for(JLabel slot : slots) {
 			parent.remove(slot);
 		}
+	}
+	
+	public int countPredecessors() {
+		if(pred == null)
+			return 0;
+		return pred.countPredecessors() + 1;
+	}
+	
+	public int countFollowers() {
+		if(next == null)
+			return 0;
+		return next.countFollowers() + 1;
+	}
+	
+	public SynmvJob getFirstPredecessor() {
+		if(pred == null)
+			return this;
+		return pred.getFirstPredecessor();
+	}
+	
+	public SynmvJob getLastFollower() {
+		if(next == null)
+			return this;
+		return next.getLastFollower();
 	}
 }

@@ -26,9 +26,9 @@ public class SynmvFrame extends JFrame {
 
 	private final JPanel jobcontainer = new JPanel();
 	private final JLabel label = new JLabel();
-	private final JButton loadFile = new JButton("load file");
-	private final JButton loadConfig = new JButton("load config");
-	private final JButton storeConfig = new JButton("store config");
+	private final JButton loadFile = new JButton("load jobs");
+	private final JButton loadConfig = new JButton("load schedule");
+	private final JButton storeConfig = new JButton("save schedule");
 	private SynmvJob[] jobs = new SynmvJob[0];
 	
 	private final JScrollPane scroll = new JScrollPane();
@@ -39,12 +39,14 @@ public class SynmvFrame extends JFrame {
 		public ReadJobsFirstException() {
 			super();
 		}
+		@SuppressWarnings("unused")
 		public ReadJobsFirstException(String message) {
 			super(message);
 		}
 	}
 	
 	private class InvalidFileFormatException extends Exception {
+		@SuppressWarnings("unused")
 		public InvalidFileFormatException() {
 			super();
 		}
@@ -265,7 +267,7 @@ public class SynmvFrame extends JFrame {
 				}
 				
 				for(SynmvJob job : jobs) {
-					job.setPositions();
+					job.setLocations();
 				}
 			}
 		});
@@ -288,8 +290,9 @@ public class SynmvFrame extends JFrame {
 		storeConfig.setSize(150,  40);
 		
 		jobcontainer.add(label);
-		label.setLocation(20, 430);
-		label.setSize(280, 10);
+		label.setLocation(20, 400);
+		label.setSize(280, 15);
+
 		
 		fileChooser.setCurrentDirectory(new File(System.getProperty("user.dir")));
 		configChooser.setCurrentDirectory(new File(System.getProperty("user.dir")));
@@ -323,19 +326,17 @@ public class SynmvFrame extends JFrame {
 					for(int i = 0; i < jobs.length; i++) {
 						jobs[i].addToParent();
 						jobs[i].setCallback(new Runnable(){
-
 							@Override
 							public void run() {
 								float cmax = 0;
 								for(SynmvJob job : jobs) {
 									if(job != null) {
-										job.setPositions();
-										cmax = Math.max(cmax, job.getOffset(job.getMachineCount()-1) + job.getLen(job.getMachineCount()-1));
+										job.setLocations();
+										cmax = Math.max(cmax, job.getOffset(job.getMachineCount()-1) + job.getTime(job.getMachineCount()-1));
 									}
 								}
 								label.setText("Cmax: " + cmax);
 							}
-							
 						});
 					}
 				}
@@ -395,7 +396,7 @@ public class SynmvFrame extends JFrame {
 				}
 			}
 		});
-		
+
 		this.pack();
 	}	
 	
