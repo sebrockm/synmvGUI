@@ -11,6 +11,8 @@ public class SynmvJob {
 	private static SynmvJob chosen = null;
 	
 	private Runnable callback;
+	
+	private final int id;
 
 	private static final int height = 60;
 	public static float factor = 10;
@@ -87,7 +89,8 @@ public class SynmvJob {
 		return times[machine];
 	}
 	
-	public SynmvJob(final JPanel container, float[] times) {
+	public SynmvJob(final JPanel container, int id, float[] times) {
+		this.id = id;
 		this.parent = container;
 		this.times = times;
 		slots = new JLabel[times.length];
@@ -151,6 +154,10 @@ public class SynmvJob {
 		
 	}
 	
+	public int getID() {
+		return id;
+	}
+	
 	public void setPred(SynmvJob pred) {
 		this.pred = pred;
 		if(callback != null) {
@@ -158,11 +165,19 @@ public class SynmvJob {
 		}
 	}
 	
+	public SynmvJob getPred() {
+		return pred;
+	}
+	
 	public void setNext(SynmvJob next) {
 		this.next = next;
 		if(callback != null) {
 			callback.run();
 		}
+	}
+	
+	public SynmvJob getNext() {
+		return next;
 	}
 	
 	public void unlink() {
