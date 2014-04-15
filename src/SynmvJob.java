@@ -1,5 +1,4 @@
 import java.awt.Color;
-import java.awt.Component;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
 import javax.swing.JLabel;
@@ -50,6 +49,9 @@ public class SynmvJob {
 	}
 	
 	public float getOffset(int machine) {
+		if(machine < 0 || machine >= getMachineCount()) {
+			throw new IllegalArgumentException("'machine' must be in [0,getMachineCount()[");
+		}
 		if(pred == null) {
 			if(machine == 0) {
 				return 0;
