@@ -82,7 +82,7 @@ public class SynmvJob {
 
 			max = Math.max(max, slots[i].getSize().width + slots[i].getLocation().x);
 			
-			parent.setSize((int) max, parent.getSize().height);
+			parent.setSize((int) max, slots.length * height);
 			parent.setPreferredSize(parent.getSize());
 			
 			int y = slots[i].getSize().height / 2 - textFields[i].getSize().height / 2;
@@ -133,7 +133,9 @@ public class SynmvJob {
 			
 			slots[i].addMouseListener(new MouseListener() {
 				public void mouseClicked(MouseEvent e) {
-					
+					if(e.getButton() == MouseEvent.BUTTON3 && chosen != null) {
+						chosen.swapWith(SynmvJob.this);
+					}
 				}
 
 				@Override
@@ -158,21 +160,23 @@ public class SynmvJob {
 
 				@Override
 				public void mousePressed(MouseEvent e) {
-					mouseHold = true;
-					if(chosen != null) {
+					if(e.getButton() == MouseEvent.BUTTON1) {
+						mouseHold = true;
+						if(chosen != null) {
+							for(JLabel slot : chosen.slots) {
+								slot.setBackground(Color.GRAY);
+							}
+							for(JTextField field : chosen.textFields) {
+								field.setVisible(false);
+							}
+						}
+						chosen = SynmvJob.this;
 						for(JLabel slot : chosen.slots) {
-							slot.setBackground(Color.GRAY);
+							slot.setBackground(Color.RED);
+						}				
+						for(JTextField field : textFields) {
+							field.setVisible(true);
 						}
-						for(JTextField field : chosen.textFields) {
-							field.setVisible(false);
-						}
-					}
-					chosen = SynmvJob.this;
-					for(JLabel slot : chosen.slots) {
-						slot.setBackground(Color.RED);
-					}				
-					for(JTextField field : textFields) {
-						field.setVisible(true);
 					}
 				}
 
@@ -247,6 +251,45 @@ public class SynmvJob {
 		}
 	}
 
+	public void swapWith(SynmvJob other) {
+		if(other == next) {
+			swapWithNext();
+		}
+		else if(other == pred) {
+			swapWithPred();
+		}
+		else if(other == this) {
+			return;
+		}
+		else if(other != null) {
+			SynmvJob thispred = this.pred;
+			SynmvJob thisnext = this.next;
+			SynmvJob otherpred = other.pred;
+			SynmvJob othernext = other.next;
+			
+			this.pred = otherpred;
+			this.next = othernext;
+			other.pred = thispred;
+			other.next = thisnext;
+			
+			if(thispred != null) {
+				thispred.next = other;
+			}
+			if(thisnext != null) {
+				thisnext.pred = other;
+			}
+			if(otherpred != null) {
+				otherpred.next = this;
+			}
+			if(othernext != null) {
+				othernext.pred = this;
+			}
+			
+			if(callback != null) {
+				callback.run();
+			}
+		}
+	}
 	
 	public void swapWithPred() {
 		if(pred != null) {

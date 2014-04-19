@@ -244,6 +244,7 @@ public class SynmvFrame extends JFrame {
 									}
 								}
 								label.setText("Cmax: " + cmax);
+								SynmvFrame.this.pack();
 							}
 						});
 					}
