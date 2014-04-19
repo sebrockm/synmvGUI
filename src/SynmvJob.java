@@ -288,6 +288,7 @@ public class SynmvJob {
 		for(JLabel slot : slots) {
 			parent.remove(slot);
 		}
+		parent.remove(number);
 	}
 	
 	public int countPredecessors() {
