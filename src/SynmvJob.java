@@ -1,4 +1,5 @@
 import java.awt.Color;
+import java.awt.FontMetrics;
 import java.awt.Point;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
@@ -9,6 +10,9 @@ import javax.swing.JPanel;
 import javax.swing.JTextField;
 import javax.swing.SwingConstants;
 import javax.swing.border.LineBorder;
+import javax.swing.event.DocumentEvent;
+import javax.swing.event.DocumentListener;
+import javax.swing.text.BadLocationException;
 
 
 public class SynmvJob {
@@ -85,9 +89,10 @@ public class SynmvJob {
 			parent.setSize((int) max, slots.length * height);
 			parent.setPreferredSize(parent.getSize());
 			
-			int y = slots[i].getSize().height / 2 - textFields[i].getSize().height / 2;
-			textFields[i].setLocation(0, y);
-			textFields[i].setSize(slots[i].getSize().width, textFields[i].getSize().height);
+			int y = (slots[i].getSize().height - textFields[i].getSize().height) / 2;
+			int x = (slots[i].getWidth() - textFields[i].getWidth()) / 2;
+			textFields[i].setLocation(x, y);
+			//textFields[i].setSize(slots[i].getSize().width, textFields[i].getSize().height);
 		}
 		
 		number.setSize(slots[0].getSize());
@@ -127,7 +132,6 @@ public class SynmvJob {
 			textFields[i] = new JTextField(slots[i].getText());
 			slots[i].add(textFields[i]);
 			textFields[i].setVisible(false);
-			textFields[i].setSize(50, 20);
 			textFields[i].setHorizontalAlignment(SwingConstants.CENTER);
 			textFields[i].setFont(slots[i].getFont());
 			
@@ -205,6 +209,36 @@ public class SynmvJob {
 					if(callback != null) {
 						callback.run();
 					}
+				}
+			});
+						
+			final FontMetrics metric = textFields[i].getFontMetrics(textFields[i].getFont());
+			textFields[i].setSize(metric.stringWidth(slots[i].getText()) + 5, 20);
+			textFields[i].getDocument().addDocumentListener(new DocumentListener() {	
+				private void update(DocumentEvent e) {
+					int width;
+					try {
+						int oldw = metric.stringWidth(slots[ii].getText());
+						int neww = metric.stringWidth(textFields[ii].getDocument().getText(0, textFields[ii].getDocument().getLength()));
+						width = Math.max(oldw, neww);
+					} catch (BadLocationException e1) {
+						width = slots[ii].getWidth();
+					}
+					width += 5;
+					textFields[ii].setSize(width, textFields[ii].getHeight());
+					textFields[ii].setLocation((slots[ii].getWidth()-width)/2, textFields[ii].getY());
+				}			
+				@Override
+				public void removeUpdate(DocumentEvent e) {
+					update(e);
+				}			
+				@Override
+				public void insertUpdate(DocumentEvent e) {
+					update(e);
+				}			
+				@Override
+				public void changedUpdate(DocumentEvent e) {
+					update(e);
 				}
 			});
 		}

@@ -171,7 +171,7 @@ public class SynmvFrame extends JFrame {
 		this.setVisible(true);
 		
 		jobcontainer.setLayout(null);
-		jobcontainer.setPreferredSize(this.getSize());
+		//jobcontainer.setPreferredSize(this.getSize());
 		jobcontainer.addMouseWheelListener(new MouseWheelListener() {
 			
 			@Override
@@ -199,8 +199,8 @@ public class SynmvFrame extends JFrame {
 		fileMenu.add(loadFile);
 		fileMenu.add(storeFile);
 		
-		jobcontainer.add(label);
-		label.setLocation(20, 400);
+		jobcontainer.add(label, BorderLayout.SOUTH);
+		//label.setLocation(20, 400);
 		label.setSize(280, 15);
 	
 		fileChooser.setCurrentDirectory(new File(System.getProperty("user.dir")));
