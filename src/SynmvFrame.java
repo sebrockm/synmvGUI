@@ -114,6 +114,46 @@ public class SynmvFrame extends JFrame {
 				throw new InvalidFileFormatException(n + 
 						" jobs are required but " + filename + " contains only " + i);
 			}
+			else { // look for duedates
+				i = 0;
+				while(i < n && (line = buf.readLine()) != null) {
+					lineNo++;
+					line = line.trim();
+					if(line.isEmpty() || line.charAt(0) == '#')
+						continue;
+					
+					tok = new StringTokenizer(line);
+					if(tok.countTokens() != 2) {
+						break;
+					}
+					
+					int id;
+					try {
+						id = Integer.parseInt(tok.nextToken());
+					} catch (NumberFormatException e) {
+						break;
+					}
+					if(id < 1 || id > n) {
+						System.err.println("line " + lineNo + " id=" + id);
+						break;
+					}
+					
+					float duedate;
+					try {
+						duedate = Float.parseFloat(tok.nextToken());
+					} catch (NumberFormatException e) {
+						break;
+					}
+					
+					retjobs[id-1].setDuedate(duedate);
+					i++;
+				}
+				if(i < n) { // unset all duedates
+					for(SynmvJob job : retjobs) {
+						job.setDuedate(-1.f);
+					}
+				}
+			}
 		}
 		catch(IOException e) {
 			e.printStackTrace();
@@ -148,6 +188,18 @@ public class SynmvFrame extends JFrame {
 				writer.newLine();
 				
 				tmp = tmp.getNext();
+			}
+			
+			if(jobs[0].getDuedate() >= 0.f) {
+				tmp = jobs[0].getFirstPredecessor();
+				writer.newLine();
+				int i = 1;
+				while (tmp != null) {
+					writer.write(i + " " + tmp.getDuedate());
+					writer.newLine();
+					tmp = tmp.getNext();
+					i++;
+				}
 			}
 		} catch (IOException e) {
 			e.printStackTrace();
@@ -237,13 +289,20 @@ public class SynmvFrame extends JFrame {
 							@Override
 							public void run() {
 								float cmax = 0;
+								float lmax = 0;
 								for(SynmvJob job : jobs) {
 									if(job != null) {
 										job.setLocations();
-										cmax = Math.max(cmax, job.getOffset(job.getMachineCount()-1) + job.getTime(job.getMachineCount()-1));
+										float finished = job.getOffset(job.getMachineCount()-1) + job.getTime(job.getMachineCount()-1);
+										cmax = Math.max(cmax, finished);
+										lmax = Math.max(lmax, finished - job.getDuedate());
 									}
 								}
-								label.setText("Cmax: " + cmax);
+								String text = "Cmax: " + cmax;
+								if(jobs[0].getDuedate() >= 0.f) {
+									text += "    Lmax: " + lmax;
+								}
+								label.setText(text);
 								SynmvFrame.this.pack();
 							}
 						});

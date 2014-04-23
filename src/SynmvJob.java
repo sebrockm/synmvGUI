@@ -22,10 +22,11 @@ public class SynmvJob {
 	private Runnable callback;
 	
 	private final int id;
+	private final float[] times;
+	private float duedate;
 
 	private static final int height = 60;
 	public static float factor = 10;
-	private final float[] times;
 	private final JTextField[] textFields;
 	private final JLabel[] slots;
 	private final JLabel number = new JLabel();
@@ -113,9 +114,14 @@ public class SynmvJob {
 	}
 	
 	public SynmvJob(final JPanel container, int id, float[] times) {
+		this(container, id, times, -1.f);
+	}
+	
+	public SynmvJob(final JPanel container, int id, float[] times, float duedate) {
 		this.id = id;
 		this.parent = container;
 		this.times = times;
+		this.duedate = duedate;
 		this.number.setVisible(true);
 		this.number.setHorizontalAlignment(SwingConstants.CENTER);
 		slots = new JLabel[times.length];
@@ -248,6 +254,14 @@ public class SynmvJob {
 	
 	public int getID() {
 		return id;
+	}
+	
+	public float getDuedate() {
+		return duedate;
+	}
+	
+	public void setDuedate(float duedate) {
+		this.duedate = duedate;
 	}
 	
 	public void setPred(SynmvJob pred) {
