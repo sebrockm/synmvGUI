@@ -17,7 +17,7 @@ import javax.swing.text.BadLocationException;
 
 public class SynmvJob {
 
-	private static SynmvJob chosen = null;
+	public static SynmvJob chosen = null;
 	
 	private Runnable callback;
 	
@@ -25,8 +25,10 @@ public class SynmvJob {
 	private final float[] times;
 	private float duedate;
 
-	private static final int height = 60;
+	public static final int height = 60;
 	public static float factor = 10;
+	public static int xOffset = 50;
+	public static int yOffset = 80;
 	private final JTextField[] textFields;
 	private final JLabel[] slots;
 	private final JLabel number = new JLabel();
@@ -83,7 +85,7 @@ public class SynmvJob {
 		int max = 0;
 		for(int i = 0; i < slots.length; i++) {
 			slots[i].setSize(Math.max(10, (int)Math.ceil(factor * getTime(i))), height);	
-			slots[i].setLocation(50+(int)(factor * getOffset(i)), 50+i*height);
+			slots[i].setLocation(xOffset+(int)(factor * getOffset(i)), yOffset+i*height);
 
 			max = Math.max(max, slots[i].getSize().width + slots[i].getLocation().x);
 			
@@ -93,7 +95,6 @@ public class SynmvJob {
 			int y = (slots[i].getSize().height - textFields[i].getSize().height) / 2;
 			int x = (slots[i].getWidth() - textFields[i].getWidth()) / 2;
 			textFields[i].setLocation(x, y);
-			//textFields[i].setSize(slots[i].getSize().width, textFields[i].getSize().height);
 		}
 		
 		number.setSize(slots[0].getSize());

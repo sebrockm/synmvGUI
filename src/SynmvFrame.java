@@ -1,5 +1,8 @@
 import java.awt.BorderLayout;
+import java.awt.Color;
 import java.awt.Dimension;
+import java.awt.Graphics;
+import java.awt.Graphics2D;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.MouseWheelEvent;
@@ -27,7 +30,7 @@ import javax.swing.JScrollPane;
 @SuppressWarnings("serial")
 public class SynmvFrame extends JFrame {
 
-	private final JPanel jobcontainer = new JPanel();
+	private final JPanel jobcontainer;
 	private final JLabel label = new JLabel();
 	private final JMenuBar menubar = new JMenuBar();
 	private final JMenu fileMenu = new JMenu("File");
@@ -222,8 +225,28 @@ public class SynmvFrame extends JFrame {
 		this.setPreferredSize(new Dimension(1000, 500));
 		this.setVisible(true);
 		
+		jobcontainer = new JPanel() {	
+			@Override
+			public void paint(Graphics g) {
+				super.paint(g);
+				
+				SynmvJob job = SynmvJob.chosen;
+				if(jobs != null && job != null) {
+					Graphics2D g2d = (Graphics2D) g;
+					Color old = g2d.getColor();
+					g2d.setColor(Color.RED);
+					if(job.getDuedate() >= 0.f) {
+						int x = SynmvJob.xOffset + (int)(job.getDuedate() * SynmvJob.factor);
+						int y = SynmvJob.yOffset - SynmvJob.height/2;
+						int l = job.getMachineCount() * SynmvJob.height + SynmvJob.height;
+						g2d.drawLine(x, y, x, y+l);
+					}
+					g2d.setColor(old);
+				}
+			}
+		};
+		
 		jobcontainer.setLayout(null);
-		//jobcontainer.setPreferredSize(this.getSize());
 		jobcontainer.addMouseWheelListener(new MouseWheelListener() {
 			
 			@Override
@@ -252,7 +275,6 @@ public class SynmvFrame extends JFrame {
 		fileMenu.add(storeFile);
 		
 		jobcontainer.add(label, BorderLayout.SOUTH);
-		//label.setLocation(20, 400);
 		label.setSize(280, 15);
 	
 		fileChooser.setCurrentDirectory(new File(System.getProperty("user.dir")));
