@@ -89,7 +89,7 @@ public class SynmvJob {
 
 			max = Math.max(max, slots[i].getSize().width + slots[i].getLocation().x);
 			
-			parent.setSize((int) max, slots.length * height);
+			parent.setSize((int) max, slots.length * height + yOffset);
 			parent.setPreferredSize(parent.getSize());
 			
 			int y = (slots[i].getSize().height - textFields[i].getSize().height) / 2;
