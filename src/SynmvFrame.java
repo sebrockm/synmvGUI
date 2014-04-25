@@ -315,7 +315,7 @@ public class SynmvFrame extends JFrame {
 								for(SynmvJob job : jobs) {
 									if(job != null) {
 										job.setLocations();
-										float finished = job.getOffset(job.getMachineCount()-1) + job.getTime(job.getMachineCount()-1);
+										float finished = job.getEndTime();
 										cmax = Math.max(cmax, finished);
 										lmax = Math.max(lmax, finished - job.getDuedate());
 									}
