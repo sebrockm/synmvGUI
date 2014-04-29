@@ -325,7 +325,6 @@ public class SynmvFrame extends JFrame {
 									text += "    Lmax: " + lmax;
 								}
 								label.setText(text);
-								SynmvFrame.this.pack();
 							}
 						});
 					}
