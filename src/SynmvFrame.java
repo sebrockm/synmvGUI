@@ -16,6 +16,7 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.util.StringTokenizer;
 
+import javax.swing.JCheckBoxMenuItem;
 import javax.swing.JFileChooser;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
@@ -25,6 +26,8 @@ import javax.swing.JMenuItem;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
+import javax.swing.event.ChangeEvent;
+import javax.swing.event.ChangeListener;
 
 
 @SuppressWarnings("serial")
@@ -36,6 +39,8 @@ public class SynmvFrame extends JFrame {
 	private final JMenu fileMenu = new JMenu("File");
 	private final JMenuItem loadFile = new JMenuItem("load jobs");
 	private final JMenuItem storeFile = new JMenuItem("save jobs");
+	private final JMenu optionsMenu = new JMenu("Options");
+	private final JCheckBoxMenuItem continuousShift = new JCheckBoxMenuItem("continuous shift", true);
 	private SynmvJob[] jobs = new SynmvJob[0];
 	
 	private final JScrollPane scroll = new JScrollPane();
@@ -273,6 +278,8 @@ public class SynmvFrame extends JFrame {
 		menubar.add(fileMenu);
 		fileMenu.add(loadFile);
 		fileMenu.add(storeFile);
+		menubar.add(optionsMenu);
+		optionsMenu.add(continuousShift);
 		
 		jobcontainer.add(label, BorderLayout.SOUTH);
 		label.setSize(280, 15);
@@ -344,6 +351,14 @@ public class SynmvFrame extends JFrame {
 				if(ret == JFileChooser.APPROVE_OPTION) {
 					storeJobsToFile(fileChooser.getSelectedFile().getAbsolutePath());
 				}
+			}
+		});
+		
+		continuousShift.addChangeListener(new ChangeListener() {
+			
+			@Override
+			public void stateChanged(ChangeEvent arg0) {
+				SynmvJob.continuousShift = continuousShift.getState();
 			}
 		});
 

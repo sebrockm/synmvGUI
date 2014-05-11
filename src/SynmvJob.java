@@ -22,6 +22,7 @@ import javax.swing.text.BadLocationException;
 public class SynmvJob {
 
 	public static SynmvJob chosen = null;
+	public static SynmvJob mouseOver = null;
 	
 	private Runnable callback;
 	
@@ -33,6 +34,7 @@ public class SynmvJob {
 	public static float factor = 10;
 	public static int xOffset = 50;
 	public static int yOffset = 80;
+	public static boolean continuousShift = true;
 	
 	private final JTextField[] textFields;
 	private final JLabel[] slots;
@@ -216,19 +218,23 @@ public class SynmvJob {
 	
 				@Override
 				public void mouseEntered(MouseEvent e) {
+					mouseOver = SynmvJob.this;
 					for(JLabel slot: slots) {
 						slot.setBorder(new LineBorder(Color.RED));
 					}
-					if(pred != null && pred.mouseHold) {
-						swapWithPred();
-					}
-					else if(next != null && next.mouseHold) {
-						swapWithNext();
+					
+					if(SynmvJob.continuousShift) {
+						if(chosen != null && chosen.mouseHold) {
+							chosen.shiftTo(SynmvJob.this);
+						}
 					}
 				}
 	
 				@Override
 				public void mouseExited(MouseEvent e) {
+					if(mouseOver == SynmvJob.this) {
+						mouseOver = null;
+					}
 					for(JLabel slot: slots) {
 						slot.setBorder(new LineBorder(Color.DARK_GRAY));
 					}
@@ -258,6 +264,12 @@ public class SynmvJob {
 	
 				@Override
 				public void mouseReleased(MouseEvent e) {
+					if(!SynmvJob.continuousShift) {
+						if(chosen != null && chosen.mouseHold && mouseOver != null) {
+							chosen.shiftTo(mouseOver);
+						}
+					}
+					chosen.mouseHold = false;
 					mouseHold = false;
 					if(callback != null) {
 						callback.run();
@@ -586,5 +598,19 @@ public class SynmvJob {
 	
 	public float getEndTime() {
 		return getOffset(getMachineCount()-1) + maxLen(getMachineCount()-1);
+	}
+	
+	public void shiftTo(SynmvJob other) {
+		int dir = other.countPredecessors() - this.countPredecessors();
+		if(dir > 0) {
+			for(int i = 0; i < dir; i++) {
+				swapWithNext();
+			}
+		}
+		else if(dir < 0) {
+			for(int i = 0; i > dir; i--) {
+				swapWithPred();
+			}
+		}
 	}
 }
