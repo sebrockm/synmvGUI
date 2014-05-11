@@ -5,6 +5,8 @@ import java.awt.Graphics;
 import java.awt.Graphics2D;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.awt.event.KeyAdapter;
+import java.awt.event.KeyEvent;
 import java.awt.event.MouseWheelEvent;
 import java.awt.event.MouseWheelListener;
 import java.io.BufferedReader;
@@ -253,20 +255,38 @@ public class SynmvFrame extends JFrame {
 		};
 		
 		jobcontainer.setLayout(null);
-		jobcontainer.addMouseWheelListener(new MouseWheelListener() {
-			
+		jobcontainer.addMouseWheelListener(new MouseWheelListener() {	
 			@Override
 			public void mouseWheelMoved(MouseWheelEvent arg0) {
-				int rot = arg0.getWheelRotation();
-				if(rot < 0) {
-					SynmvJob.factor *= 1.1f;
+				if(arg0.isControlDown()) {
+					int rot = arg0.getWheelRotation();
+					if(rot < 0) {
+						SynmvJob.factor *= 1.1f;
+					}
+					else if(rot > 0) {
+						SynmvJob.factor /= 1.1f;
+					}
+					
+					for(SynmvJob job : jobs) {
+						job.setLocations();
+					}
 				}
-				else if(rot > 0) {
-					SynmvJob.factor /= 1.1f;
-				}
-				
-				for(SynmvJob job : jobs) {
-					job.setLocations();
+			}
+		});
+		
+		this.addKeyListener(new KeyAdapter() {
+			@Override
+			public void keyTyped(KeyEvent arg0) {
+				if(arg0.isControlDown()) {
+					switch(arg0.getKeyChar()) {
+						case '+': SynmvJob.factor *= 1.1f; break;
+						case '-': SynmvJob.factor /= 1.1f; break;
+						case '0': SynmvJob.factor = SynmvJob.FACTOR; break;
+					}
+
+					for(SynmvJob job : jobs) {
+						job.setLocations();
+					}
 				}
 			}
 		});

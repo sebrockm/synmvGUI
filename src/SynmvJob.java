@@ -30,8 +30,9 @@ public class SynmvJob {
 	private final float[] times;
 	private float duedate;
 
+	public static final float FACTOR = 10;
 	public static final int height = 60;
-	public static float factor = 10;
+	public static float factor = FACTOR;
 	public static int xOffset = 50;
 	public static int yOffset = 80;
 	public static boolean continuousShift = true;
