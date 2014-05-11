@@ -14,6 +14,7 @@ import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.util.LinkedList;
 import java.util.StringTokenizer;
 
 import javax.swing.JCheckBoxMenuItem;
@@ -319,17 +320,32 @@ public class SynmvFrame extends JFrame {
 							public void run() {
 								float cmax = 0;
 								float lmax = 0;
+								LinkedList<SynmvJob> critLmax = new LinkedList<SynmvJob>();
 								for(SynmvJob job : jobs) {
 									if(job != null) {
 										job.setLocations();
 										float finished = job.getEndTime();
 										cmax = Math.max(cmax, finished);
-										lmax = Math.max(lmax, finished - job.getDuedate());
+										
+										if(lmax == finished - job.getDuedate()) {
+											critLmax.add(job);
+										}
+										else if(lmax < finished - job.getDuedate()) {
+											lmax = finished - job.getDuedate();
+											critLmax.clear();
+											critLmax.add(job);
+										}
 									}
 								}
 								String text = "Cmax: " + cmax;
 								if(jobs[0].getDuedate() >= 0.f) {
 									text += "    Lmax: " + lmax;
+									for(SynmvJob job : jobs) {
+										job.setDefaultColor();
+									}
+									for(SynmvJob job : critLmax) {
+										job.highlight();
+									}
 								}
 								label.setText(text);
 							}

@@ -195,9 +195,9 @@ public class SynmvJob {
 	}
 	
 	private void initSlots() {
+		setDefaultColor();
 		for(int i = 0; i < slots.length; i++) {
 			slots[i].setText(textFields[i].getText());
-			slots[i].setBackground(Color.GRAY);
 			slots[i].setVisible(true);
 			slots[i].setOpaque(true);
 			slots[i].setBorder(new LineBorder(Color.DARK_GRAY));
@@ -245,17 +245,13 @@ public class SynmvJob {
 					if(e.getButton() == MouseEvent.BUTTON1) {
 						mouseHold = true;
 						if(chosen != null) {
-							for(JLabel slot : chosen.slots) {
-								slot.setBackground(Color.GRAY);
-							}
+							chosen.highlight(Color.GRAY);
 							for(JTextField field : chosen.textFields) {
 								field.setVisible(false);
 							}
 						}
 						chosen = SynmvJob.this;
-						for(JLabel slot : chosen.slots) {
-							slot.setBackground(Color.RED);
-						}				
+						chosen.highlight(Color.RED);				
 						for(JTextField field : textFields) {
 							field.setVisible(true);
 						}
@@ -611,6 +607,25 @@ public class SynmvJob {
 			for(int i = 0; i > dir; i--) {
 				swapWithPred();
 			}
+		}
+	}
+	
+	public void highlight(Color c) {
+		for(JLabel slot : slots) {
+			slot.setBackground(c);
+		}
+	}
+	
+	public void highlight() {
+		highlight(Color.ORANGE);
+	}
+	
+	public void setDefaultColor() {
+		if(this == chosen) {
+			highlight(Color.RED);
+		}
+		else {
+			highlight(Color.GRAY);
 		}
 	}
 }
