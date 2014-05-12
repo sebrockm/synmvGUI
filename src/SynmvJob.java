@@ -36,6 +36,7 @@ public class SynmvJob {
 	public static int xOffset = 50;
 	public static int yOffset = 80;
 	public static boolean continuousShift = true;
+	public static boolean synchronous = true;
 	
 	private final JTextField[] textFields;
 	private final JLabel[] slots;
@@ -84,13 +85,21 @@ public class SynmvJob {
 		if(machine < 0 || machine >= getMachineCount()) {
 			throw new IllegalArgumentException("'machine' must be in [0,getMachineCount()[");
 		}
-		if(pred == null) {
-			if(machine == 0) {
+		if(SynmvJob.synchronous) {
+			if(pred == null) {
+				if(machine == 0) {
+					return 0;
+				}
+				return getOffset(machine-1) + maxLen(machine-1);
+			}
+			return pred.getOffset(machine) + pred.maxLen(machine);
+		}
+		else {
+			if(pred == null) {
 				return 0;
 			}
-			return getOffset(machine-1) + maxLen(machine-1);
+			return pred.getOffset(machine) + pred.getTime(machine);
 		}
-		return pred.getOffset(machine) + pred.maxLen(machine);
 	}
 	
 	public int getMachineCount() {
@@ -100,7 +109,7 @@ public class SynmvJob {
 	public void setLocations() {
 		int max = 0;
 		for(int i = 0; i < slots.length; i++) {
-			slots[i].setSize(Math.max(10, (int)Math.ceil(factor * getTime(i))), height);	
+			slots[i].setSize(Math.max(synchronous ? 10 : 0, (int)Math.ceil(factor * getTime(i))), height);	
 			slots[i].setLocation(xOffset+(int)(factor * getOffset(i)), yOffset+i*height);
 
 			max = Math.max(max, slots[i].getSize().width + slots[i].getLocation().x);
@@ -112,13 +121,13 @@ public class SynmvJob {
 			int x = (slots[i].getWidth() - textFields[i].getWidth()) / 2;
 			textFields[i].setLocation(x, y);
 		}
-		
+			
 		number.setSize(slots[0].getSize());
 		Point loc = slots[0].getLocation();
 		loc.y -= number.getSize().height;
 		number.setLocation(loc);
 		number.setText("" + (countPredecessors()+1));
-		
+	
 		if(infobox.isVisible()) {
 			showInfobox();
 		}
@@ -594,7 +603,12 @@ public class SynmvJob {
 	}
 	
 	public float getEndTime() {
-		return getOffset(getMachineCount()-1) + maxLen(getMachineCount()-1);
+		if(SynmvJob.synchronous) {
+			return getOffset(getMachineCount()-1) + maxLen(getMachineCount()-1);
+		}
+		else {
+			return getOffset(getMachineCount()-1) + getTime(getMachineCount()-1);
+		}
 	}
 	
 	public void shiftTo(SynmvJob other) {
@@ -627,6 +641,12 @@ public class SynmvJob {
 		}
 		else {
 			highlight(Color.GRAY);
+		}
+	}
+	
+	public void runCallback() {
+		if(callback != null) {
+			callback.run();
 		}
 	}
 }

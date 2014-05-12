@@ -44,6 +44,7 @@ public class SynmvFrame extends JFrame {
 	private final JMenuItem storeFile = new JMenuItem("save jobs");
 	private final JMenu optionsMenu = new JMenu("Options");
 	private final JCheckBoxMenuItem continuousShift = new JCheckBoxMenuItem("continuous shift", true);
+	private final JCheckBoxMenuItem synchronous = new JCheckBoxMenuItem("synchronous", true);
 	private SynmvJob[] jobs = new SynmvJob[0];
 	
 	private final JScrollPane scroll = new JScrollPane();
@@ -300,6 +301,7 @@ public class SynmvFrame extends JFrame {
 		fileMenu.add(loadFile);
 		fileMenu.add(storeFile);
 		menubar.add(optionsMenu);
+		optionsMenu.add(synchronous);
 		optionsMenu.add(continuousShift);
 		
 		jobcontainer.add(label, BorderLayout.SOUTH);
@@ -375,8 +377,7 @@ public class SynmvFrame extends JFrame {
 			}
 		});
 		
-		storeFile.addActionListener(new ActionListener() {
-			
+		storeFile.addActionListener(new ActionListener() {		
 			@Override
 			public void actionPerformed(ActionEvent e) {
 				if(jobs == null || jobs.length == 0) {
@@ -390,8 +391,16 @@ public class SynmvFrame extends JFrame {
 			}
 		});
 		
-		continuousShift.addChangeListener(new ChangeListener() {
-			
+		synchronous.addChangeListener(new ChangeListener() {
+			@Override
+			public void stateChanged(ChangeEvent arg0) {
+				SynmvJob.synchronous = synchronous.getState();
+				for(SynmvJob job : jobs) {
+					job.runCallback();
+				}
+			}
+		});
+		continuousShift.addChangeListener(new ChangeListener() {	
 			@Override
 			public void stateChanged(ChangeEvent arg0) {
 				SynmvJob.continuousShift = continuousShift.getState();
