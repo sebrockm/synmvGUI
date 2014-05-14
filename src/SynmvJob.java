@@ -95,10 +95,16 @@ public class SynmvJob {
 			return pred.getOffset(machine) + pred.maxLen(machine);
 		}
 		else {
-			if(pred == null) {
+			if(pred == null && machine == 0) {
 				return 0;
 			}
-			return pred.getOffset(machine) + pred.getTime(machine);
+			if(pred == null) {
+				return getOffset(machine-1) + getTime(machine-1);
+			}
+			if(machine == 0) {
+				return pred.getOffset(machine) + pred.getTime(machine);
+			}
+			return Math.max(getOffset(machine-1) + getTime(machine-1), pred.getOffset(machine) + pred.getTime(machine));
 		}
 	}
 	
@@ -109,7 +115,7 @@ public class SynmvJob {
 	public void setLocations() {
 		int max = 0;
 		for(int i = 0; i < slots.length; i++) {
-			slots[i].setSize(Math.max(synchronous ? 10 : 0, (int)Math.ceil(factor * getTime(i))), height);	
+			slots[i].setSize(Math.max(10, (int)Math.ceil(factor * getTime(i))), height);	
 			slots[i].setLocation(xOffset+(int)(factor * getOffset(i)), yOffset+i*height);
 
 			max = Math.max(max, slots[i].getSize().width + slots[i].getLocation().x);
