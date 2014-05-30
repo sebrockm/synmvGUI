@@ -246,8 +246,8 @@ public class SynmvFrame extends JFrame {
 					g2d.setColor(Color.RED);
 					if(job.getDuedate() >= 0.f) {
 						int x = SynmvJob.xOffset + (int)(job.getDuedate() * SynmvJob.factor);
-						int y = SynmvJob.yOffset - SynmvJob.height/2;
-						int l = job.getMachineCount() * SynmvJob.height + SynmvJob.height;
+						int y = SynmvJob.yOffset - SynmvJob.HEIGHT/2;
+						int l = job.getMachineCount() * SynmvJob.HEIGHT + SynmvJob.HEIGHT;
 						g2d.drawLine(x, y, x, y+l);
 					}
 					g2d.setColor(old);

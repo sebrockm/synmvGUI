@@ -19,44 +19,177 @@ import javax.swing.event.DocumentListener;
 import javax.swing.text.BadLocationException;
 
 
+/**
+ * This class represents one job.
+ * It contains the java.swing components that are used to display the job 
+ * as well as the internal logic that is used to calculate e.g. the positions.
+ * 
+ * @author sebrockm
+ *
+ */
 public class SynmvJob {
 
+	/**
+	 * References the chosen instance or null if none is chosen.
+	 */
 	public static SynmvJob chosen = null;
+	
+	/**
+	 * References the instance the mouse is actually over.
+	 */
 	public static SynmvJob mouseOver = null;
-	
-	private Runnable callback;
-	
-	private final int id;
-	private final float[] times;
-	private float duedate;
 
+	/**
+	 * The initial factor the job's times are multiplied with
+	 * to calculate the time field's horizontal size in pixels.
+	 */
 	public static final float FACTOR = 10;
-	public static final int height = 60;
+	
+	/**
+	 * The initial height of the times in pixels.
+	 */
+	public static final int HEIGHT = 60;
+	
+	/**
+	 * The actual factor the job's times are multiplied with
+	 * to calculate the time field's horizontal size in pixels.
+	 */
 	public static float factor = FACTOR;
+	
+	/**
+	 * The offset in pixels from the frame's left border to the first
+	 * job's first time field.
+	 */
 	public static int xOffset = 50;
+	
+	/**
+	 * The offset in pixels from the frame's top border to the top
+	 * time fields of the jobs.
+	 */
 	public static int yOffset = 80;
+	
+	/**
+	 * Corresponds to the continuous shift JCheckbox.
+	 */
 	public static boolean continuousShift = true;
+	
+	/**
+	 * Corresponds to the synchronous JCheckbox
+	 */
 	public static boolean synchronous = true;
 	
-	private final JTextField[] textFields;
-	private final JLabel[] slots;
-	private final JLabel number = new JLabel();
+	
+	
+	/**
+	 * This Runnable is used as a callback that is invoked every time
+	 * the layout of the SynmvJobs among each other changes.
+	 * It shall calculate their new positions.
+	 */
+	private Runnable callback;
+	
+	/**
+	 * The job's id.
+	 */
+	private final int id;
+	
+	/**
+	 * An array of process times the machines need to process the job.
+	 * times[0] belongs to machine 1 etc.
+	 */
+	private final float[] times;
+	
+	/**
+	 * The job's due date. A negative due date means the job has none.
+	 */
+	private float duedate;
+	
+	
+	/**
+	 * The JPanel the job will be displayed in.
+	 */
 	private final JPanel parent;
 	
+	/**
+	 * An array of JLabels each graphically representing one process time.
+	 */
+	private final JLabel[] slots;
+	
+	/**
+	 * JTextFields that are placed on the slots to enter a new process time.
+	 */
+	private final JTextField[] textFields;
+	
+	/**
+	 * A JLabel showing the number (position) in the actual schedule.
+	 * It is displayed right above the first slot.
+	 */
+	private final JLabel number = new JLabel();
+	
+	/**
+	 * An info box that appears on double click on a job.
+	 */
 	private final JFrame infobox = new JFrame("info");
+	
+	/**
+	 * A JLabel displaying the job's id in the info box.
+	 */
 	private final JLabel idLabel = new JLabel();
+	
+	/**
+	 * A JTextField used to display the job's actual position in the info box.
+	 * It can be used to enter a new position the job shall shift to or swap with.
+	 */
 	private final JTextField cycleField = new JTextField();
+	
+	/**
+	 * JTextFields that display the job's process times in the info box.
+	 * They also allow the user to change those times by entering new ones.
+	 */
 	private final JTextField[] infoTimeFields;
+	
+	/**
+	 * A JLabel in the info box that displays the actual start time of the job.
+	 */
 	private final JLabel startTimeLabel = new JLabel();
+	
+	/**
+	 * A JLabel in the info box that displays the actual time the job will be done.
+	 */
 	private final JLabel endTimeLabel = new JLabel();
+	
+	/**
+	 * A JTextField in the info box that displays the the due date of the job or
+	 * '-' if it does not have one. It can be used to enter a new due date.
+	 */
 	private final JTextField duedateField = new JTextField();
 	
+	/**
+	 * A reference to the job's predecessor in the actual schedule or null if
+	 * this job is the first one.
+	 */
 	private SynmvJob pred;
+	
+	/**
+	 * A reference to the job's follower in the actual schedule or null if
+	 * this job is the last one.
+	 */
 	private SynmvJob next;
 	
+	/**
+	 * true, when the job is being moved and the mouse button is still pressed.
+	 */
 	private boolean mouseHold = false;
 
 	
+	/**
+	 * Calculates the the time this job will be on a machine in the actual
+	 * schedule depending on the predecessors' and followers' times on their
+	 * machines.
+	 * 
+	 * @param machine
+	 *            the machine number starting with 0
+	 * @return the cycle time of this job on a machine in the actual schedule
+	 */
 	private float maxLen(int machine) {
 		//search first relevant
 		SynmvJob tmp = this;
@@ -81,6 +214,16 @@ public class SynmvJob {
 		return len;
 	}
 	
+	/**
+	 * Calculates the offset of this job on a machine. This is the time when
+	 * that machine begins to process this job in the actual schedule.
+	 * This method does care about the synchronous flag which results in a
+	 * synchronous or asynchronous calculation.
+	 * 
+	 * @param machine
+	 * 			the machine number starting with 0
+	 * @return the offset of this job on a machine
+	 */
 	public float getOffset(int machine) {
 		if(machine < 0 || machine >= getMachineCount()) {
 			throw new IllegalArgumentException("'machine' must be in [0,getMachineCount()[");
@@ -108,19 +251,28 @@ public class SynmvJob {
 		}
 	}
 	
+	/**
+	 * 
+	 * @return the number of machines the job will be processed on
+	 */
 	public int getMachineCount() {
 		return slots.length;
 	}
 	
+	/**
+	 * This method sets the locations, sizes and texts (if any) 
+	 * of all visible components of this job.
+	 * It also actualizes the info box, if it is visible.
+	 */
 	public void setLocations() {
 		int max = 0;
 		for(int i = 0; i < slots.length; i++) {
-			slots[i].setSize(Math.max(10, (int)Math.ceil(factor * getTime(i))), height);	
-			slots[i].setLocation(xOffset+(int)(factor * getOffset(i)), yOffset+i*height);
+			slots[i].setSize(Math.max(10, (int)Math.ceil(factor * getTime(i))), HEIGHT);	
+			slots[i].setLocation(xOffset+(int)(factor * getOffset(i)), yOffset+i*HEIGHT);
 
 			max = Math.max(max, slots[i].getSize().width + slots[i].getLocation().x);
 			
-			parent.setSize((int) max, slots.length * height + yOffset);
+			parent.setSize((int) max, slots.length * HEIGHT + yOffset);
 			parent.setPreferredSize(parent.getSize());
 			
 			int y = (slots[i].getSize().height - textFields[i].getSize().height) / 2;
@@ -139,20 +291,46 @@ public class SynmvJob {
 		}
 	}
 	
+	/**
+	 * Sets a new callback that will be called once immediately once.
+	 * The callback will be invoked every time the job's position in the
+	 * schedule changes.
+	 * 
+	 * @param callback
+	 * 			the new callback
+	 */
 	public void setCallback(Runnable callback) {
 		this.callback = callback;
 		callback.run();
 	}
 
-	
+	/**
+	 * Returns the process time of this job on a machine.
+	 * @param machine
+	 * @return process time
+	 */
 	public float getTime(int machine) {
 		return times[machine];
 	}
 	
+	/**
+	 * Creates a new SynmvJob without due date.
+	 * 
+	 * @param container
+	 * 			the parent container
+	 * @param id
+	 * 			the job's id
+	 * @param times
+	 * 			an array of process times
+	 */
 	public SynmvJob(final JPanel container, int id, float[] times) {
 		this(container, id, times, -1.f);
 	}
 	
+	/**
+	 * Initializes the JTextFields on the slots. Sets initial texts and 
+	 * adds ActionListeners and DocumentListeners.
+	 */
 	private void initTextFields() {
 		for(int i = 0; i < textFields.length; i++) {
 			textFields[i].setVisible(false);
@@ -179,7 +357,7 @@ public class SynmvJob {
 			});
 				
 			final FontMetrics metric = textFields[i].getFontMetrics(textFields[i].getFont());
-			textFields[i].setSize(metric.stringWidth("" + times[i]) + 5, height/3);
+			textFields[i].setSize(metric.stringWidth("" + times[i]) + 5, HEIGHT/3);
 			textFields[i].getDocument().addDocumentListener(new DocumentListener() {	
 				private void update(DocumentEvent e) {
 					int width;
@@ -210,6 +388,10 @@ public class SynmvJob {
 		}
 	}
 	
+	/**
+	 * Initializes the slots. Sets initial texts and colors and adds the
+	 * textFields and MouseListeners.
+	 */
 	private void initSlots() {
 		setDefaultColor();
 		for(int i = 0; i < slots.length; i++) {
@@ -291,6 +473,11 @@ public class SynmvJob {
 		}
 	}
 	
+	/**
+	 * Initializes the info box and all of its components.
+	 * Sets the box's layout and adds ActionListeners to the
+	 * components.
+	 */
 	private void initInfobox() {
 		infobox.setVisible(false);
 		
@@ -413,6 +600,10 @@ public class SynmvJob {
 		});
 	}
 	
+	/**
+	 * Shows the info box, if it has been invisible, and actualizes its JLabels,
+	 * JTextFields and layout.
+	 */
 	private void showInfobox() {
 		infobox.setVisible(true);
 		
@@ -427,6 +618,18 @@ public class SynmvJob {
 		infobox.pack();
 	}
 	
+	/**
+	 * Creates a new SynmvJob with due date.
+	 * 
+	 * @param container
+	 * 			the parent container
+	 * @param id
+	 * 			the job's id
+	 * @param times
+	 * 			an array of the job's process times
+	 * @param duedate
+	 * 			the due date, a negative due date means there is none
+	 */
 	public SynmvJob(final JPanel container, int id, float[] times, float duedate) {
 		this.id = id;
 		this.parent = container;
@@ -450,18 +653,37 @@ public class SynmvJob {
 		initInfobox();
 	}
 	
+	/**
+	 * 
+	 * @return the job's id
+	 */
 	public int getID() {
 		return id;
 	}
 	
+	/**
+	 * 
+	 * @return the job's due date
+	 */
 	public float getDuedate() {
 		return duedate;
 	}
 	
+	/**
+	 * 
+	 * @param duedate
+	 * 		new due date
+	 */
 	public void setDuedate(float duedate) {
 		this.duedate = duedate;
 	}
 	
+	/**
+	 * Sets a new predecessor and invokes the callback.
+	 * 
+	 * @param pred
+	 * 			new predecessor
+	 */
 	public void setPred(SynmvJob pred) {
 		this.pred = pred;
 		if(callback != null) {
@@ -469,10 +691,20 @@ public class SynmvJob {
 		}
 	}
 	
+	/**
+	 * 
+	 * @return the job's predecessor or null, if this job is the first one
+	 */
 	public SynmvJob getPred() {
 		return pred;
 	}
 	
+	/**
+	 * Sets a new follower and invokes the callback.
+	 * 
+	 * @param next
+	 * 			new follower
+	 */
 	public void setNext(SynmvJob next) {
 		this.next = next;
 		if(callback != null) {
@@ -480,10 +712,18 @@ public class SynmvJob {
 		}
 	}
 	
+	/**
+	 * 
+	 * @return the job's follower or null, if this job is the last one.
+	 */
 	public SynmvJob getNext() {
 		return next;
 	}
 	
+	/**
+	 * Removes this job from the schedule and links its former predecessor
+	 * and follower together. Runs the callback afterwards.
+	 */
 	public void unlink() {
 		if(pred != null) {
 			pred.next = next;
@@ -497,6 +737,12 @@ public class SynmvJob {
 		}
 	}
 
+	/**
+	 * Swaps (exchanges) this job with another and invokes the callback.
+	 * 
+	 * @param other
+	 * 			the job to be swaped with
+	 */
 	public void swapWith(SynmvJob other) {
 		if(other == next) {
 			swapWithNext();
@@ -537,6 +783,10 @@ public class SynmvJob {
 		}
 	}
 	
+	/**
+	 * Swaps this job with its predecessor. A call to this
+	 * method is equivalent to swapWith(getPred()).
+	 */
 	public void swapWithPred() {
 		if(pred != null) {
 			SynmvJob tmpPred = pred;
@@ -560,12 +810,19 @@ public class SynmvJob {
 		}
 	}
 	
+	/**
+	 * Swaps this job with its follower. A call to this 
+	 * method is equivalent to swapWith(getNext()).
+	 */
 	public void swapWithNext() {
 		if(next != null) {
 			next.swapWithPred();
 		}
 	}
 	
+	/**
+	 * Adds this jobs components to the parent container.
+	 */
 	public void addToParent() {
 		for(JLabel slot : slots) {
 			parent.add(slot);
@@ -573,6 +830,9 @@ public class SynmvJob {
 		parent.add(number);
 	}
 	
+	/**
+	 * Removes this jobs components from the parent container.
+	 */
 	public void removeFromParent() {
 		for(JLabel slot : slots) {
 			parent.remove(slot);
@@ -580,34 +840,71 @@ public class SynmvJob {
 		parent.remove(number);
 	}
 	
+	/**
+	 * Counts the number of predecessors of this job, which can be used
+	 * to calculate this job's position in the schedule.
+	 * 
+	 * @return the number of predecessors
+	 */
 	public int countPredecessors() {
 		if(pred == null)
 			return 0;
 		return pred.countPredecessors() + 1;
 	}
 	
+	/**
+	 * Counts the number of followers of this job.
+	 * 
+	 * @return the number of followers
+	 */
 	public int countFollowers() {
 		if(next == null)
 			return 0;
 		return next.countFollowers() + 1;
 	}
 	
+	/**
+	 * Returns a reference to the first predecessor i.e. the first job in the
+	 * schedule.
+	 * 
+	 * @return the first job in the schedule
+	 */
 	public SynmvJob getFirstPredecessor() {
 		if(pred == null)
 			return this;
 		return pred.getFirstPredecessor();
 	}
 	
+	/**
+	 * Returns a reference to the last follower i.e. the last job in the
+	 * schedule.
+	 * 
+	 * @return the last job in the schedule
+	 */
 	public SynmvJob getLastFollower() {
 		if(next == null)
 			return this;
 		return next.getLastFollower();
 	}
 	
+	/**
+	 * Calculates the time when this job starts on the first machine.
+	 * This method does care about the synchronous flag which results in a
+	 * synchronous or asynchronous calculation.
+	 * 
+	 * @return the start time of the job
+	 */
 	public float getStartTime() {
 		return getOffset(0);
 	}
 	
+	/**
+	 * Calculates the time when this job is done on the last machine.
+	 * This method does care about the synchronous flag which results in a
+	 * synchronous or asynchronous calculation.
+	 * 
+	 * @return the end time of the job
+	 */
 	public float getEndTime() {
 		if(SynmvJob.synchronous) {
 			return getOffset(getMachineCount()-1) + maxLen(getMachineCount()-1);
@@ -617,6 +914,14 @@ public class SynmvJob {
 		}
 	}
 	
+	/**
+	 * Shifts this job to the position of another job. That means this job is
+	 * swapped with its predecessor or follower respectively until it is swapped
+	 * with the other on.
+	 * 
+	 * @param other
+	 * 			the job to be shifted to
+	 */
 	public void shiftTo(SynmvJob other) {
 		int dir = other.countPredecessors() - this.countPredecessors();
 		if(dir > 0) {
@@ -631,16 +936,30 @@ public class SynmvJob {
 		}
 	}
 	
+	/**
+	 * Highlights the job's slots with a color.
+	 * 
+	 * @param c
+	 * 			color
+	 */
 	public void highlight(Color c) {
 		for(JLabel slot : slots) {
 			slot.setBackground(c);
 		}
 	}
 	
+	/**
+	 * Highlights the job's slots with Color.ORANGE.
+	 * A call to this method is equivalent to highlight(Color.ORANGE).
+	 */
 	public void highlight() {
 		highlight(Color.ORANGE);
 	}
 	
+	/**
+	 * Sets the slots' color to the default one, which is Color.GRAY or
+	 * Color.RED, if this is the chosen SynmvJob.
+	 */
 	public void setDefaultColor() {
 		if(this == chosen) {
 			highlight(Color.RED);
@@ -650,6 +969,9 @@ public class SynmvJob {
 		}
 	}
 	
+	/**
+	 * Runs the callback, if it is not null.
+	 */
 	public void runCallback() {
 		if(callback != null) {
 			callback.run();
