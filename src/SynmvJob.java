@@ -35,7 +35,7 @@ public class SynmvJob {
 	public static SynmvJob chosen = null;
 	
 	/**
-	 * References the instance the mouse is actually over.
+	 * References the instance the mouse is currently over.
 	 */
 	public static SynmvJob mouseOver = null;
 
@@ -51,7 +51,7 @@ public class SynmvJob {
 	public static final int HEIGHT = 60;
 	
 	/**
-	 * The actual factor the job's times are multiplied with
+	 * The current factor the job's times are multiplied with
 	 * to calculate the time field's horizontal size in pixels.
 	 */
 	public static float factor = FACTOR;
@@ -120,7 +120,7 @@ public class SynmvJob {
 	private final JTextField[] textFields;
 	
 	/**
-	 * A JLabel showing the number (position) in the actual schedule.
+	 * A JLabel showing the number (position) in the current schedule.
 	 * It is displayed right above the first slot.
 	 */
 	private final JLabel number = new JLabel();
@@ -136,7 +136,7 @@ public class SynmvJob {
 	private final JLabel idLabel = new JLabel();
 	
 	/**
-	 * A JTextField used to display the job's actual position in the info box.
+	 * A JTextField used to display the job's current position in the info box.
 	 * It can be used to enter a new position the job shall shift to or swap with.
 	 */
 	private final JTextField cycleField = new JTextField();
@@ -148,12 +148,12 @@ public class SynmvJob {
 	private final JTextField[] infoTimeFields;
 	
 	/**
-	 * A JLabel in the info box that displays the actual start time of the job.
+	 * A JLabel in the info box that displays the current start time of the job.
 	 */
 	private final JLabel startTimeLabel = new JLabel();
 	
 	/**
-	 * A JLabel in the info box that displays the actual time the job will be done.
+	 * A JLabel in the info box that displays the current time the job will be done.
 	 */
 	private final JLabel endTimeLabel = new JLabel();
 	
@@ -164,13 +164,13 @@ public class SynmvJob {
 	private final JTextField duedateField = new JTextField();
 	
 	/**
-	 * A reference to the job's predecessor in the actual schedule or null if
+	 * A reference to the job's predecessor in the current schedule or null if
 	 * this job is the first one.
 	 */
 	private SynmvJob pred;
 	
 	/**
-	 * A reference to the job's follower in the actual schedule or null if
+	 * A reference to the job's follower in the current schedule or null if
 	 * this job is the last one.
 	 */
 	private SynmvJob next;
@@ -182,13 +182,13 @@ public class SynmvJob {
 
 	
 	/**
-	 * Calculates the the time this job will be on a machine in the actual
+	 * Calculates the the time this job will be on a machine in the current
 	 * schedule depending on the predecessors' and followers' times on their
 	 * machines.
 	 * 
 	 * @param machine
 	 *            the machine number starting with 0
-	 * @return the cycle time of this job on a machine in the actual schedule
+	 * @return the cycle time of this job on a machine in the current schedule
 	 */
 	private float maxLen(int machine) {
 		//search first relevant
@@ -216,7 +216,7 @@ public class SynmvJob {
 	
 	/**
 	 * Calculates the offset of this job on a machine. This is the time when
-	 * that machine begins to process this job in the actual schedule.
+	 * that machine begins to process this job in the current schedule.
 	 * This method does care about the synchronous flag which results in a
 	 * synchronous or asynchronous calculation.
 	 * 

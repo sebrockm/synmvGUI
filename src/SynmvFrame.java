@@ -32,24 +32,83 @@ import javax.swing.JScrollPane;
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
 
-
+/**
+ * This class represents the window the SynmvJobs are displayed in.
+ * 
+ * @author sebrockm
+ *
+ */
 @SuppressWarnings("serial")
 public class SynmvFrame extends JFrame {
 
+	/**
+	 * Container that is used as the jobs' parent.
+	 */
 	private final JPanel jobcontainer;
+	
+	/**
+	 * JLabel that displays the Cmax and Lmax text.
+	 */
 	private final JLabel label = new JLabel();
+	
+	/**
+	 * menu bar
+	 */
 	private final JMenuBar menubar = new JMenuBar();
+	
+	/**
+	 * File-menu
+	 */
 	private final JMenu fileMenu = new JMenu("File");
+	
+	/**
+	 * load jobs
+	 */
 	private final JMenuItem loadFile = new JMenuItem("load jobs");
+	
+	/**
+	 * save jobs
+	 */
 	private final JMenuItem storeFile = new JMenuItem("save jobs");
+	
+	/**
+	 * Options-menu
+	 */
 	private final JMenu optionsMenu = new JMenu("Options");
+	
+	/**
+	 * continuous shift checkbox.
+	 * If disabled the job shifting by mouse will not be displayed until the mouse is released.
+	 */
 	private final JCheckBoxMenuItem continuousShift = new JCheckBoxMenuItem("continuous shift", true);
+	
+	/**
+	 * Checkbox to switch between a synchronous and an asynchronous schedule.
+	 */
 	private final JCheckBoxMenuItem synchronous = new JCheckBoxMenuItem("synchronous", true);
+	
+	
+	/**
+	 * An array of SynmvJobs that shall be displayed in the window.
+	 */
 	private SynmvJob[] jobs = new SynmvJob[0];
 	
+	/**
+	 * scroll pane
+	 */
 	private final JScrollPane scroll = new JScrollPane();
+	
+	/**
+	 * JFileChooser for opening and saving job files.
+	 */
 	private final JFileChooser fileChooser = new JFileChooser();
 	
+	/**
+	 * This exception shall be thrown, if a read file has an invalid format.
+	 * 
+	 * @author sebastian
+	 *
+	 */
 	@SuppressWarnings("unused")	
 	private class InvalidFileFormatException extends Exception {
 		public InvalidFileFormatException() {
@@ -60,6 +119,17 @@ public class SynmvFrame extends JFrame {
 		}
 	}
 	
+	/**
+	 * Reads jobs from a file.
+	 * 
+	 * @param filename
+	 * 			name of the file to be read
+	 * @return an array of read SynmvJobs
+	 * @throws FileNotFoundException
+	 * 			if the given file was not found
+	 * @throws InvalidFileFormatException
+	 * 			if the given file has an invalid format
+	 */
 	private SynmvJob[] readJobsFromFile(String filename) throws FileNotFoundException, InvalidFileFormatException {
 		SynmvJob[] retjobs = null;
 		BufferedReader buf = new BufferedReader(new FileReader(filename));
@@ -182,6 +252,12 @@ public class SynmvFrame extends JFrame {
 		return retjobs;
 	}
 	
+	/**
+	 * Stores the current schedule in a file that can be read again later.
+	 * 
+	 * @param filename
+	 * 			name of the file the schedule shall be stored in
+	 */
 	private void storeJobsToFile(String filename) {
 		BufferedWriter writer = null;
 		
@@ -226,7 +302,14 @@ public class SynmvFrame extends JFrame {
 		}
 	}
 
-	
+
+	/**
+	 * Creates a new SynmvFrame.
+	 * This means all components will be initialized, sized, placed and event
+	 * listeners will be added.
+	 * 
+	 * @throws FileNotFoundException
+	 */
 	public SynmvFrame() throws FileNotFoundException {
 		super();
 
