@@ -350,9 +350,7 @@ public class SynmvJob {
 					
 					SynmvJob.this.times[ii] = t;
 					SynmvJob.this.slots[ii].setText("" + t);
-					if(callback != null) {
-						callback.run();
-					}
+					runCallback();
 				}
 			});
 				
@@ -465,9 +463,7 @@ public class SynmvJob {
 					}
 					chosen.mouseHold = false;
 					mouseHold = false;
-					if(callback != null) {
-						callback.run();
-					}
+					runCallback();
 				}
 			});
 		}
@@ -566,9 +562,7 @@ public class SynmvJob {
 					times[ii] = t;
 					slots[ii].setText("" + t);
 					textFields[ii].setText(slots[ii].getText());
-					if(callback != null) {
-						callback.run();
-					}
+					runCallback();
 				}
 			});
 		}
@@ -593,9 +587,7 @@ public class SynmvJob {
 				}
 				
 				duedate = t;
-				if(callback != null) {
-					callback.run();
-				}
+				runCallback();
 			}
 		});
 	}
@@ -686,9 +678,7 @@ public class SynmvJob {
 	 */
 	public void setPred(SynmvJob pred) {
 		this.pred = pred;
-		if(callback != null) {
-			callback.run();
-		}
+		runCallback();
 	}
 	
 	/**
@@ -707,9 +697,7 @@ public class SynmvJob {
 	 */
 	public void setNext(SynmvJob next) {
 		this.next = next;
-		if(callback != null) {
-			callback.run();
-		}
+		runCallback();
 	}
 	
 	/**
@@ -732,9 +720,7 @@ public class SynmvJob {
 			next.pred = pred;
 		}
 		next = pred = null;
-		if(callback != null) {
-			callback.run();
-		}
+		runCallback();
 	}
 
 	/**
@@ -777,9 +763,7 @@ public class SynmvJob {
 				othernext.pred = this;
 			}
 			
-			if(callback != null) {
-				callback.run();
-			}
+			runCallback();
 		}
 	}
 	
@@ -804,9 +788,7 @@ public class SynmvJob {
 			next = tmpPred;
 			tmpPred.pred = this;
 			
-			if(callback != null) {
-				callback.run();
-			}
+			runCallback();
 		}
 	}
 	
