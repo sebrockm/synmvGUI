@@ -78,14 +78,30 @@ public class SynmvJob {
 	 */
 	public static boolean synchronous = true;
 	
-	
+	/**
+	 * Indicates whether the jobs have due dates.
+	 */
+	public static boolean hasDuedates = false;
 	
 	/**
 	 * This Runnable is used as a callback that is invoked every time
 	 * the layout of the SynmvJobs among each other changes.
 	 * It shall calculate their new positions.
 	 */
-	private Runnable callback;
+	public static Runnable callback;
+	
+	/**
+	 * Sets a new callback that will be called once immediately once.
+	 * The callback will be invoked every time a job's position in the
+	 * schedule changes.
+	 * 
+	 * @param callback
+	 * 			the new callback
+	 */
+//	public static void setCallback(Runnable callback) {
+//		SynmvJob.callback = callback;
+//		callback.run();
+//	}
 	
 	/**
 	 * The job's id.
@@ -289,19 +305,6 @@ public class SynmvJob {
 		if(infobox.isVisible()) {
 			showInfobox();
 		}
-	}
-	
-	/**
-	 * Sets a new callback that will be called once immediately once.
-	 * The callback will be invoked every time the job's position in the
-	 * schedule changes.
-	 * 
-	 * @param callback
-	 * 			the new callback
-	 */
-	public void setCallback(Runnable callback) {
-		this.callback = callback;
-		callback.run();
 	}
 
 	/**
@@ -954,7 +957,7 @@ public class SynmvJob {
 	/**
 	 * Runs the callback, if it is not null.
 	 */
-	public void runCallback() {
+	public static void runCallback() {
 		if(callback != null) {
 			callback.run();
 		}

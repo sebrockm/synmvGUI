@@ -120,6 +120,46 @@ public class SynmvFrame extends JFrame {
 	}
 	
 	/**
+	 * Callback that is given to the SynmvJob class.
+	 */
+	private final Runnable callback = new Runnable(){
+		@Override
+		public void run() {
+			float cmax = 0;
+			float lmax = 0;
+			LinkedList<SynmvJob> critLmax = new LinkedList<SynmvJob>();
+			for(SynmvJob job : jobs) {
+				if(job != null) {
+					job.setLocations();
+					float finished = job.getEndTime();
+					cmax = Math.max(cmax, finished);
+					
+					if(lmax == finished - job.getDuedate()) {
+						critLmax.add(job);
+					}
+					else if(lmax < finished - job.getDuedate()) {
+						lmax = finished - job.getDuedate();
+						critLmax.clear();
+						critLmax.add(job);
+					}
+				}
+			}
+			String text = "Cmax: " + cmax;
+			if(SynmvJob.hasDuedates) {
+				text += "    Lmax: " + lmax;
+				for(SynmvJob job : jobs) {
+					job.setDefaultColor();
+				}
+				for(SynmvJob job : critLmax) {
+					job.highlight();
+				}
+			}
+			label.setText(text);
+		}
+	};
+	
+	
+	/**
 	 * Reads jobs from a file.
 	 * 
 	 * @param filename
@@ -234,6 +274,10 @@ public class SynmvFrame extends JFrame {
 					for(SynmvJob job : retjobs) {
 						job.setDuedate(-1.f);
 					}
+					SynmvJob.hasDuedates = false;
+				}
+				else {
+					SynmvJob.hasDuedates = true;
 				}
 			}
 		}
@@ -307,11 +351,11 @@ public class SynmvFrame extends JFrame {
 	 * Creates a new SynmvFrame.
 	 * This means all components will be initialized, sized, placed and event
 	 * listeners will be added.
-	 * 
-	 * @throws FileNotFoundException
 	 */
-	public SynmvFrame() throws FileNotFoundException {
+	public SynmvFrame() {
 		super();
+		
+		SynmvJob.callback = callback;
 
 		this.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 		this.setPreferredSize(new Dimension(1000, 500));
@@ -420,42 +464,8 @@ public class SynmvFrame extends JFrame {
 					
 					for(int i = 0; i < jobs.length; i++) {
 						jobs[i].addToParent();
-						jobs[i].setCallback(new Runnable(){
-							@Override
-							public void run() {
-								float cmax = 0;
-								float lmax = 0;
-								LinkedList<SynmvJob> critLmax = new LinkedList<SynmvJob>();
-								for(SynmvJob job : jobs) {
-									if(job != null) {
-										job.setLocations();
-										float finished = job.getEndTime();
-										cmax = Math.max(cmax, finished);
-										
-										if(lmax == finished - job.getDuedate()) {
-											critLmax.add(job);
-										}
-										else if(lmax < finished - job.getDuedate()) {
-											lmax = finished - job.getDuedate();
-											critLmax.clear();
-											critLmax.add(job);
-										}
-									}
-								}
-								String text = "Cmax: " + cmax;
-								if(jobs[0].getDuedate() >= 0.f) {
-									text += "    Lmax: " + lmax;
-									for(SynmvJob job : jobs) {
-										job.setDefaultColor();
-									}
-									for(SynmvJob job : critLmax) {
-										job.highlight();
-									}
-								}
-								label.setText(text);
-							}
-						});
 					}
+					SynmvJob.runCallback();
 				}
 			}
 		});
@@ -478,9 +488,7 @@ public class SynmvFrame extends JFrame {
 			@Override
 			public void stateChanged(ChangeEvent arg0) {
 				SynmvJob.synchronous = synchronous.getState();
-				for(SynmvJob job : jobs) {
-					job.runCallback();
-				}
+				SynmvJob.runCallback();
 			}
 		});
 		continuousShift.addChangeListener(new ChangeListener() {	
