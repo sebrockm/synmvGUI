@@ -16,6 +16,7 @@ import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.StringTokenizer;
 
@@ -40,6 +41,21 @@ import javax.swing.event.ChangeListener;
  */
 @SuppressWarnings("serial")
 public class SynmvFrame extends JFrame {
+	
+	/**
+	 * Indicator string that is followed by a schedule.
+	 */
+	private static final String SCHEDULE_INDICATOR = "#schedule";
+	
+	/**
+	 * Indicator string that is followed by due dates.
+	 */
+	private static final String DUEDATE_INDICATOR = "#duedates";
+	
+	/**
+	 * Indicator string that is followed by weights
+	 */
+	private static final String WEIGHT_INDICATOR = "#weights";
 
 	/**
 	 * Container that is used as the jobs' parent.
@@ -157,7 +173,53 @@ public class SynmvFrame extends JFrame {
 			label.setText(text);
 		}
 	};
-	
+
+	/**
+	 * Reads a schedule from a line and delivers error messages (InvalidFileFormatException)
+	 * 
+	 * @param line
+	 * 			the string containing the schedule
+	 * @param n
+	 * 			the expected length of the schedule
+	 * @param filename
+	 * 			the name of the file line is taken from
+	 * @param lineNo
+	 * 			the line number of line in file
+	 * @return the schedule list
+	 * @throws InvalidFileFormatException
+	 * 			if the schedule is not valid. 
+	 */
+	ArrayList<Integer> readSchedule(String line, int n, String filename, int lineNo) throws InvalidFileFormatException {
+		line = line.trim();
+		StringTokenizer tok = new StringTokenizer(line);
+		if(tok.countTokens() != n) {
+			throw new InvalidFileFormatException("in file " + filename + " in line " + 
+					lineNo + " the schedule contains " + tok.countTokens() + " jobs, but " +
+					"must contain " + n + " jobs");
+		}
+		
+		ArrayList<Integer> schedule = new ArrayList<Integer>(n);
+		while(tok.hasMoreTokens()) {
+			int job;
+			try {
+				job = Integer.parseInt(tok.nextToken());
+			}
+			catch(NumberFormatException e) {
+				throw new InvalidFileFormatException("in file " + filename + " in line " + 
+						lineNo + " the schedule contains an invalid number: " + e.getMessage());
+			}
+			if(job < 1 || job > n) {
+				throw new InvalidFileFormatException("in file " + filename + " in line " +
+						lineNo + " a job id is not between 1 and " + n);
+			}
+			if(schedule.contains(job)) {
+				throw new InvalidFileFormatException("in file " + filename + " in line " + 
+						lineNo + " the schedule contains " + job + " at least twice");
+			}
+			schedule.add(job);
+		}
+		return schedule;
+	}
 	
 	/**
 	 * Reads jobs from a file.
@@ -175,6 +237,7 @@ public class SynmvFrame extends JFrame {
 		BufferedReader buf = new BufferedReader(new FileReader(filename));
 		
 		try {
+			//skip empty lines and comments
 			String line;
 			int lineNo = 0;
 			do {
@@ -185,11 +248,14 @@ public class SynmvFrame extends JFrame {
 				}
 				line = line.trim();
 			} while(line.isEmpty() || line.charAt(0) == '#');
+			
+			//number of machines and jobs
 			StringTokenizer tok = new StringTokenizer(line);
 			if(tok.countTokens() != 2) {
 				throw new InvalidFileFormatException("first line of " + filename + " is invalid: " + line);
 			}
 			
+			//read number of machines
 			int m;
 			try {
 				m = Integer.parseInt(tok.nextToken());
@@ -197,6 +263,7 @@ public class SynmvFrame extends JFrame {
 				throw new InvalidFileFormatException("in file " + filename + " in line " + lineNo + ": " + e.getMessage());
 			}
 			
+			//read number of jobs
 			int n = 0;
 			try {
 				n = Integer.parseInt(tok.nextToken());
@@ -205,10 +272,25 @@ public class SynmvFrame extends JFrame {
 			}
 			retjobs = new SynmvJob[n];
 			
+			ArrayList<Integer> schedule = null;
+			
+			//read process times
 			int i = 0;
 			while(i < n && (line = buf.readLine()) != null) {
 				lineNo++;
 				line = line.trim();
+				
+				//look for schedule
+				if(i == 0 && line.startsWith(SCHEDULE_INDICATOR)) {
+					line = buf.readLine();
+					lineNo++;
+					if(line == null) {
+						break;
+					}
+					schedule = readSchedule(line, n, filename, lineNo);
+					continue;
+				}
+				
 				if(line.isEmpty() || line.charAt(0) == '#')
 					continue;
 				
@@ -226,60 +308,95 @@ public class SynmvFrame extends JFrame {
 					}
 				}
 				retjobs[i] = new SynmvJob(jobcontainer, i+1, times);
-				if(i > 0) {
-					retjobs[i].setPred(retjobs[i-1]);
-					retjobs[i-1].setNext(retjobs[i]);
-				}
 				i++;
 			}
 			if(i < n) {
 				throw new InvalidFileFormatException(n + 
 						" jobs are required but " + filename + " contains only " + i);
 			}
-			else { // look for duedates
-				i = 0;
-				while(i < n && (line = buf.readLine()) != null) {
+			
+			// look for additional information
+			while((line = buf.readLine()) != null) {
+				lineNo++;
+				line = line.trim();
+				
+				//look for schedule
+				if(line.startsWith(SCHEDULE_INDICATOR)) {
+					if(schedule != null) {
+						throw new InvalidFileFormatException("in file " + filename + " in line " +
+								lineNo + " there is a second schedule indicator");
+					}
+					line = buf.readLine();
 					lineNo++;
-					line = line.trim();
-					if(line.isEmpty() || line.charAt(0) == '#')
-						continue;
-					
-					tok = new StringTokenizer(line);
-					if(tok.countTokens() != 2) {
-						break;
+					if(line == null) {
+						throw new InvalidFileFormatException("file " + filename + " ends with schedule indicator");
 					}
-					
-					int id;
-					try {
-						id = Integer.parseInt(tok.nextToken());
-					} catch (NumberFormatException e) {
-						break;
-					}
-					if(id < 1 || id > n) {
-						System.err.println("line " + lineNo + " id=" + id);
-						break;
-					}
-					
-					float duedate;
-					try {
-						duedate = Float.parseFloat(tok.nextToken());
-					} catch (NumberFormatException e) {
-						break;
-					}
-					
-					retjobs[id-1].setDuedate(duedate);
-					i++;
+					schedule = readSchedule(line, n, filename, lineNo);
+					continue;
 				}
-				if(i < n) { // unset all duedates
-					for(SynmvJob job : retjobs) {
-						job.setDuedate(-1.f);
+				
+				//look for due dates
+				if(line.startsWith(DUEDATE_INDICATOR)) {
+					i = 0;
+					while(i < n && (line = buf.readLine()) != null) {
+						line = line.trim();
+						lineNo++;
+						tok = new StringTokenizer(line);
+						if(tok.countTokens() != 2) {
+							throw new InvalidFileFormatException("in file " + filename + " in line " +
+									lineNo + " there are " + tok.countTokens() + " instead of 2 tokens");
+						}
+						
+						int id;
+						try {
+							id = Integer.parseInt(tok.nextToken());
+						} catch (NumberFormatException e) {
+							throw new InvalidFileFormatException("in file " + filename + " in line " + lineNo + ": " + e.getMessage());
+						}
+						if(id < 1 || id > n) {
+							throw new InvalidFileFormatException("in file " + filename + " in line " +
+									lineNo + " the job id is not between 1 and " + n);
+						}
+						
+						float duedate;
+						try {
+							duedate = Float.parseFloat(tok.nextToken());
+						} catch (NumberFormatException e) {
+							throw new InvalidFileFormatException("in file " + filename + " in line " + lineNo + ": " + e.getMessage());
+						}
+						
+						retjobs[id-1].setDuedate(duedate);
+						i++;
 					}
-					SynmvJob.hasDuedates = false;
+					if(i < n) {
+						throw new InvalidFileFormatException("in file " + filename + " there are only " + i + " due dates instead of " + n);
+					}
+					else {
+						SynmvJob.hasDuedates = true;
+					}
+					continue;
 				}
-				else {
-					SynmvJob.hasDuedates = true;
+				
+				if(line.isEmpty() || line.charAt(0) == '#')
+					continue;
+				
+				throw new InvalidFileFormatException("in file " + filename + " in line " + lineNo + 
+						" there is unknown information: " + line);
+			}
+			
+			if(schedule == null) {// default schedule
+				for(int j = 1; j < n; j++) {
+					retjobs[j].setPred(retjobs[j-1]);
+					retjobs[j-1].setNext(retjobs[j]);
 				}
 			}
+			else {
+				for(int j = 1; j < n; j++) {
+					retjobs[schedule.get(j)-1].setPred(retjobs[schedule.get(j-1)-1]);
+					retjobs[schedule.get(j-1)-1].setNext(retjobs[schedule.get(j)-1]);
+				}
+			}
+			
 		}
 		catch(IOException e) {
 			e.printStackTrace();
