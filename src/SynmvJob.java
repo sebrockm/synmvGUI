@@ -278,18 +278,13 @@ public class SynmvJob {
 	/**
 	 * This method sets the locations, sizes and texts (if any) 
 	 * of all visible components of this job.
-	 * It also actualizes the info box, if it is visible.
+	 * It also actualizes the info box, if it is visible, and it resizes
+	 * the parent container if necessary.
 	 */
 	public void setLocations() {
-		int max = 0;
 		for(int i = 0; i < slots.length; i++) {
 			slots[i].setSize(Math.max(10, (int)Math.ceil(factor * getTime(i))), HEIGHT);	
 			slots[i].setLocation(xOffset+(int)(factor * getOffset(i)), yOffset+i*HEIGHT);
-
-			max = Math.max(max, slots[i].getSize().width + slots[i].getLocation().x);
-			
-			parent.setSize((int) max, slots.length * HEIGHT + yOffset);
-			parent.setPreferredSize(parent.getSize());
 			
 			int y = (slots[i].getSize().height - textFields[i].getSize().height) / 2;
 			int x = (slots[i].getWidth() - textFields[i].getWidth()) / 2;
@@ -304,6 +299,13 @@ public class SynmvJob {
 	
 		if(infobox.isVisible()) {
 			showInfobox();
+		}
+		
+		//size of parent depends on last job
+		if(next == null) {
+			parent.setSize(slots[slots.length-1].getSize().width + slots[slots.length-1].getLocation().x, 
+					slots.length * HEIGHT + yOffset);
+			parent.setPreferredSize(parent.getSize());
 		}
 	}
 

@@ -189,7 +189,7 @@ public class SynmvFrame extends JFrame {
 	 * @throws InvalidFileFormatException
 	 * 			if the schedule is not valid. 
 	 */
-	ArrayList<Integer> readSchedule(String line, int n, String filename, int lineNo) throws InvalidFileFormatException {
+	private ArrayList<Integer> readSchedule(String line, int n, String filename, int lineNo) throws InvalidFileFormatException {
 		line = line.trim();
 		StringTokenizer tok = new StringTokenizer(line);
 		if(tok.countTokens() != n) {
@@ -518,10 +518,7 @@ public class SynmvFrame extends JFrame {
 						case '-': SynmvJob.factor /= 1.1f; break;
 						case '0': SynmvJob.factor = SynmvJob.FACTOR; break;
 					}
-
-					for(SynmvJob job : jobs) {
-						job.setLocations();
-					}
+					SynmvJob.runCallback();
 				}
 			}
 		});
