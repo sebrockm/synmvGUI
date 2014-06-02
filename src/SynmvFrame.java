@@ -418,49 +418,47 @@ public class SynmvFrame extends JFrame {
 	 * 
 	 * @param filename
 	 * 			name of the file the schedule shall be stored in
+	 * @throws IOException 
+	 * 			if an IO error occurs
 	 */
-	private void storeJobsToFile(String filename) {
-		BufferedWriter writer = null;
+	private void storeJobsToFile(String filename) throws IOException {
+		BufferedWriter writer = new BufferedWriter(new FileWriter(filename));
+
+		//write m n
+		writer.write(jobs[0].getMachineCount() + " " + jobs.length);
+		writer.newLine();
 		
-		try {
-			writer = new BufferedWriter(new FileWriter(filename));
-			
-			SynmvJob tmp = jobs[0].getFirstPredecessor();
-			
-			writer.write(tmp.getMachineCount() + " " + jobs.length);
+		//write process times
+		for(SynmvJob job : jobs) {
+			for(int i = 0; i < job.getMachineCount(); i++) {
+				writer.write(job.getTime(i) + " ");
+			}
 			writer.newLine();
-			
-			while(tmp != null) {
-				for(int i = 0; i < tmp.getMachineCount(); i++) {
-					writer.write(tmp.getTime(i) + " ");
-				}
+		}
+		
+		//write schedule
+		writer.newLine();
+		writer.write(SCHEDULE_INDICATOR);
+		writer.newLine();
+		SynmvJob tmp = jobs[0].getFirstPredecessor();
+		while(tmp != null) {
+			writer.write(tmp.getID() + " ");
+			tmp = tmp.getNext();
+		}
+		writer.newLine();
+		
+		//write due dates
+		if(SynmvJob.hasDuedates) {
+			writer.newLine();
+			writer.write(DUEDATE_INDICATOR);
+			writer.newLine();
+			for(SynmvJob job : jobs) {
+				writer.write(job.getID() + " " + job.getDuedate());
 				writer.newLine();
-				
-				tmp = tmp.getNext();
-			}
-			
-			if(jobs[0].getDuedate() >= 0.f) {
-				tmp = jobs[0].getFirstPredecessor();
-				writer.newLine();
-				int i = 1;
-				while (tmp != null) {
-					writer.write(i + " " + tmp.getDuedate());
-					writer.newLine();
-					tmp = tmp.getNext();
-					i++;
-				}
-			}
-		} catch (IOException e) {
-			e.printStackTrace();
-		} finally {
-			if(writer != null) {
-				try {
-					writer.close();
-				} catch (IOException e) {
-					e.printStackTrace();
-				}
 			}
 		}
+		
+		writer.close();
 	}
 
 
@@ -505,16 +503,8 @@ public class SynmvFrame extends JFrame {
 			public void mouseWheelMoved(MouseWheelEvent arg0) {
 				if(arg0.isControlDown()) {
 					int rot = arg0.getWheelRotation();
-					if(rot < 0) {
-						SynmvJob.factor *= 1.1f;
-					}
-					else if(rot > 0) {
-						SynmvJob.factor /= 1.1f;
-					}
-					
-					for(SynmvJob job : jobs) {
-						job.setLocations();
-					}
+					SynmvJob.factor *= Math.pow(1.1, -rot);
+					SynmvJob.runCallback();
 				}
 			}
 		});
@@ -596,7 +586,11 @@ public class SynmvFrame extends JFrame {
 				}
 				int ret = fileChooser.showSaveDialog(SynmvFrame.this);
 				if(ret == JFileChooser.APPROVE_OPTION) {
-					storeJobsToFile(fileChooser.getSelectedFile().getAbsolutePath());
+					try {
+						storeJobsToFile(fileChooser.getSelectedFile().getAbsolutePath());
+					} catch (IOException e1) {
+						JOptionPane.showMessageDialog(SynmvFrame.this, e1.getMessage(), "cannot write to file", JOptionPane.ERROR_MESSAGE);
+					}
 				}
 			}
 		});
