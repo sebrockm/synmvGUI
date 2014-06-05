@@ -430,7 +430,7 @@ public class SynmvJob {
 					}
 					
 					if(SynmvJob.continuousShift) {
-						if(chosen != null && chosen.mouseHold) {
+						if(chosen != null && chosen.mouseHold && chosen != SynmvJob.this) {
 							SynmvJobShiftAction action = new SynmvJobShiftAction(chosen, SynmvJob.this);
 							action.run();
 							actionList.addFirst(action);
