@@ -1,6 +1,7 @@
 import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.Dimension;
+import java.awt.Event;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
 import java.awt.event.ActionEvent;
@@ -30,6 +31,7 @@ import javax.swing.JMenuItem;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
+import javax.swing.KeyStroke;
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
 
@@ -53,10 +55,11 @@ public class SynmvFrame extends JFrame {
 	private static final String DUEDATE_INDICATOR = "#duedates";
 	
 	/**
-	 * Indicator string that is followed by weights
+	 * Indicator string that is followed by weights.
 	 */
 	private static final String WEIGHT_INDICATOR = "#weights";
 
+	
 	/**
 	 * Container that is used as the jobs' parent.
 	 */
@@ -88,13 +91,28 @@ public class SynmvFrame extends JFrame {
 	private final JMenuItem storeFile = new JMenuItem("save jobs");
 	
 	/**
+	 * Edit-menu
+	 */
+	private final JMenu editMenu = new JMenu("Edit");
+	
+	/**
+	 * undo item
+	 */
+	private final JMenuItem undoItem = new JMenuItem("undo");
+	
+	/**
+	 * redo item
+	 */
+	private final JMenuItem redoItem = new JMenuItem("redo");
+	
+	/**
 	 * Options-menu
 	 */
 	private final JMenu optionsMenu = new JMenu("Options");
 	
 	/**
-	 * continuous shift checkbox.
-	 * If disabled the job shifting by mouse will not be displayed until the mouse is released.
+	 * Continuous shift checkbox.
+	 * If disabled a mouse shift of a job will not be visualized until the mouse is released.
 	 */
 	private final JCheckBoxMenuItem continuousShift = new JCheckBoxMenuItem("continuous shift", true);
 	
@@ -120,7 +138,7 @@ public class SynmvFrame extends JFrame {
 	private final JFileChooser fileChooser = new JFileChooser();
 	
 	/**
-	 * This exception shall be thrown, if a read file has an invalid format.
+	 * This exception shall be thrown, if a file read has an invalid format.
 	 * 
 	 * @author sebastian
 	 *
@@ -410,6 +428,8 @@ public class SynmvFrame extends JFrame {
 			}
 		}
 		
+		SynmvJob.actionList.clear();
+		SynmvJob.undoneActionList.clear();
 		return retjobs;
 	}
 	
@@ -531,6 +551,9 @@ public class SynmvFrame extends JFrame {
 		menubar.add(fileMenu);
 		fileMenu.add(loadFile);
 		fileMenu.add(storeFile);
+		menubar.add(editMenu);
+		editMenu.add(undoItem);
+		editMenu.add(redoItem);
 		menubar.add(optionsMenu);
 		optionsMenu.add(synchronous);
 		optionsMenu.add(continuousShift);
@@ -591,6 +614,30 @@ public class SynmvFrame extends JFrame {
 				}
 			}
 		});
+		
+		undoItem.addActionListener(new ActionListener() {
+			@Override
+			public void actionPerformed(ActionEvent arg0) {
+				if(!SynmvJob.actionList.isEmpty()){
+					SynmvJobAction a = SynmvJob.actionList.removeFirst();
+					a.undo();
+					SynmvJob.undoneActionList.addFirst(a);
+				}
+			}
+		});
+		undoItem.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_Z, Event.CTRL_MASK));
+		
+		redoItem.addActionListener(new ActionListener() {
+			@Override
+			public void actionPerformed(ActionEvent arg0) {
+				if(!SynmvJob.undoneActionList.isEmpty()) {
+					SynmvJobAction a = SynmvJob.undoneActionList.removeFirst();
+					a.run();
+					SynmvJob.actionList.addFirst(a);
+				}
+			}
+		});
+		redoItem.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_Y, Event.CTRL_MASK));
 		
 		synchronous.addChangeListener(new ChangeListener() {
 			@Override

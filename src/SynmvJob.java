@@ -6,6 +6,8 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
+import java.util.Deque;
+import java.util.LinkedList;
 
 import javax.swing.JButton;
 import javax.swing.JFrame;
@@ -29,6 +31,16 @@ import javax.swing.text.BadLocationException;
  */
 public class SynmvJob {
 
+	/**
+	 * Deque that stores all done actions to be able to undo them.
+	 */
+	public static final Deque<SynmvJobAction> actionList = new LinkedList<SynmvJobAction>();
+	
+	/**
+	 * Deque that stores all undone actions to be able to redo them.
+	 */
+	public static final Deque<SynmvJobAction> undoneActionList = new LinkedList<SynmvJobAction>();
+	
 	/**
 	 * References the chosen instance or null if none is chosen.
 	 */
@@ -90,18 +102,6 @@ public class SynmvJob {
 	 */
 	public static Runnable callback;
 	
-	/**
-	 * Sets a new callback that will be called once immediately once.
-	 * The callback will be invoked every time a job's position in the
-	 * schedule changes.
-	 * 
-	 * @param callback
-	 * 			the new callback
-	 */
-//	public static void setCallback(Runnable callback) {
-//		SynmvJob.callback = callback;
-//		callback.run();
-//	}
 	
 	/**
 	 * The job's id.
@@ -311,7 +311,9 @@ public class SynmvJob {
 
 	/**
 	 * Returns the process time of this job on a machine.
+	 * 
 	 * @param machine
+	 * 			machine index beginning with 0
 	 * @return process time
 	 */
 	public float getTime(int machine) {
@@ -409,7 +411,10 @@ public class SynmvJob {
 			slots[i].addMouseListener(new MouseListener() {
 				public void mouseClicked(MouseEvent e) {
 					if(e.getButton() == MouseEvent.BUTTON3 && chosen != null) {
-						chosen.swapWith(SynmvJob.this);
+						SynmvJobSwapAction action = new SynmvJobSwapAction(chosen, SynmvJob.this);
+						action.run();
+						actionList.addFirst(action);
+						undoneActionList.clear();
 					}
 					
 					if(e.getButton() == MouseEvent.BUTTON1 && e.getClickCount() == 2) {
@@ -426,7 +431,10 @@ public class SynmvJob {
 					
 					if(SynmvJob.continuousShift) {
 						if(chosen != null && chosen.mouseHold) {
-							chosen.shiftTo(SynmvJob.this);
+							SynmvJobShiftAction action = new SynmvJobShiftAction(chosen, SynmvJob.this);
+							action.run();
+							actionList.addFirst(action);
+							undoneActionList.clear();
 						}
 					}
 				}
@@ -463,7 +471,10 @@ public class SynmvJob {
 				public void mouseReleased(MouseEvent e) {
 					if(!SynmvJob.continuousShift) {
 						if(chosen != null && chosen.mouseHold && mouseOver != null) {
-							chosen.shiftTo(mouseOver);
+							SynmvJobShiftAction action = new SynmvJobShiftAction(chosen, mouseOver);
+							action.run();
+							actionList.addFirst(action);
+							undoneActionList.clear();
 						}
 					}
 					chosen.mouseHold = false;
@@ -515,12 +526,12 @@ public class SynmvJob {
 					return;
 				}
 				
-				while(pos <= countPredecessors()) {
-					swapWithPred();
-				}
-				while(pos >= countPredecessors() + 2) {
-					swapWithNext();
-				}
+				int dir = pos - countPredecessors() - 1;
+				SynmvJob shiftTo = getNthNext(dir);
+				SynmvJobShiftAction action = new SynmvJobShiftAction(SynmvJob.this, shiftTo);
+				action.run();
+				actionList.addFirst(action);
+				undoneActionList.clear();
 			}
 		});
 		
@@ -544,7 +555,11 @@ public class SynmvJob {
 				for(int i = 1; i < pos; i++) {
 					tmp = tmp.getNext();
 				}
-				tmp.swapWith(SynmvJob.this);
+				
+				SynmvJobSwapAction action = new SynmvJobSwapAction(SynmvJob.this, tmp);
+				action.run();
+				actionList.addFirst(action);
+				undoneActionList.clear();
 			}
 		});
 				
@@ -695,6 +710,23 @@ public class SynmvJob {
 	}
 	
 	/**
+	 * Returns the nth predecessor of this job or null if there are less predecessors than n.
+	 * @param n
+	 * 		number of predecessors
+	 * @return the nth predecessor or null
+	 */
+	public SynmvJob getNthPred(int n) {
+		SynmvJob tmp = this;
+		for(int i = 0; i < n && tmp != null; i++) {
+			tmp = tmp.pred;
+		}
+		for(int i = 0; i > n && tmp != null; i++) {
+			tmp = tmp.next;
+		}
+		return tmp;
+	}
+	
+	/**
 	 * Sets a new follower and invokes the callback.
 	 * 
 	 * @param next
@@ -711,6 +743,16 @@ public class SynmvJob {
 	 */
 	public SynmvJob getNext() {
 		return next;
+	}
+	
+	/**
+	 * Returns the nth follower of this job or null if there are less followers than n.
+	 * @param n
+	 * 		number of followers
+	 * @return the nth follower or null
+	 */
+	public SynmvJob getNthNext(int n) {
+		return getNthPred(-n);
 	}
 	
 	/**
@@ -908,8 +950,9 @@ public class SynmvJob {
 	 * 
 	 * @param other
 	 * 			the job to be shifted to
+	 * @return the number of positions this job has moved, negative means it was shifted to the left
 	 */
-	public void shiftTo(SynmvJob other) {
+	public int shiftTo(SynmvJob other) {
 		int dir = other.countPredecessors() - this.countPredecessors();
 		if(dir > 0) {
 			for(int i = 0; i < dir; i++) {
@@ -921,6 +964,7 @@ public class SynmvJob {
 				swapWithPred();
 			}
 		}
+		return dir;
 	}
 	
 	/**
