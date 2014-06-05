@@ -1,13 +1,12 @@
 import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.Dimension;
-import java.awt.Event;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import java.awt.event.KeyAdapter;
 import java.awt.event.KeyEvent;
+import java.awt.event.KeyListener;
 import java.awt.event.MouseWheelEvent;
 import java.awt.event.MouseWheelListener;
 import java.io.BufferedReader;
@@ -104,6 +103,21 @@ public class SynmvFrame extends JFrame {
 	 * redo item
 	 */
 	private final JMenuItem redoItem = new JMenuItem("redo");
+	
+	/**
+	 * zoom in item
+	 */
+	private final JMenuItem zoomIn = new JMenuItem("zoom in");
+	
+	/**
+	 * zoom out item
+	 */
+	private final JMenuItem zoomOut = new JMenuItem("zoom out");
+	
+	/**
+	 * reset zoom item
+	 */
+	private final JMenuItem resetZoom = new JMenuItem("reset zoom");
 	
 	/**
 	 * Options-menu
@@ -528,20 +542,6 @@ public class SynmvFrame extends JFrame {
 				}
 			}
 		});
-		
-		this.addKeyListener(new KeyAdapter() {
-			@Override
-			public void keyTyped(KeyEvent arg0) {
-				if(arg0.isControlDown()) {
-					switch(arg0.getKeyChar()) {
-						case '+': SynmvJob.factor *= 1.1f; break;
-						case '-': SynmvJob.factor /= 1.1f; break;
-						case '0': SynmvJob.factor = SynmvJob.FACTOR; break;
-					}
-					SynmvJob.runCallback();
-				}
-			}
-		});
 
 		
 		scroll.setViewportView(jobcontainer);
@@ -554,6 +554,9 @@ public class SynmvFrame extends JFrame {
 		menubar.add(editMenu);
 		editMenu.add(undoItem);
 		editMenu.add(redoItem);
+		editMenu.add(zoomIn);
+		editMenu.add(zoomOut);
+		editMenu.add(resetZoom);
 		menubar.add(optionsMenu);
 		optionsMenu.add(synchronous);
 		optionsMenu.add(continuousShift);
@@ -596,6 +599,7 @@ public class SynmvFrame extends JFrame {
 				}
 			}
 		});
+		loadFile.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_O, KeyEvent.CTRL_DOWN_MASK));
 		
 		storeFile.addActionListener(new ActionListener() {		
 			@Override
@@ -614,6 +618,7 @@ public class SynmvFrame extends JFrame {
 				}
 			}
 		});
+		storeFile.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_S, KeyEvent.CTRL_DOWN_MASK));
 		
 		undoItem.addActionListener(new ActionListener() {
 			@Override
@@ -625,7 +630,7 @@ public class SynmvFrame extends JFrame {
 				}
 			}
 		});
-		undoItem.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_Z, Event.CTRL_MASK));
+		undoItem.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_Z, KeyEvent.CTRL_DOWN_MASK));
 		
 		redoItem.addActionListener(new ActionListener() {
 			@Override
@@ -637,7 +642,34 @@ public class SynmvFrame extends JFrame {
 				}
 			}
 		});
-		redoItem.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_Y, Event.CTRL_MASK));
+		redoItem.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_Y, KeyEvent.CTRL_DOWN_MASK));
+		
+		zoomIn.addActionListener(new ActionListener() {
+			@Override
+			public void actionPerformed(ActionEvent arg0) {
+				SynmvJob.factor *= 1.1f;
+				SynmvJob.runCallback();
+			}
+		});
+		zoomIn.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_ADD, KeyEvent.CTRL_DOWN_MASK));
+		
+		zoomOut.addActionListener(new ActionListener() {
+			@Override
+			public void actionPerformed(ActionEvent arg0) {
+				SynmvJob.factor /= 1.1f;
+				SynmvJob.runCallback();
+			}
+		});
+		zoomOut.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_SUBTRACT, KeyEvent.CTRL_DOWN_MASK));
+	
+		resetZoom.addActionListener(new ActionListener() {
+			@Override
+			public void actionPerformed(ActionEvent arg0) {
+				SynmvJob.factor = SynmvJob.FACTOR;
+				SynmvJob.runCallback();
+			}
+		});
+		resetZoom.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_NUMPAD0, KeyEvent.CTRL_DOWN_MASK));
 		
 		synchronous.addChangeListener(new ChangeListener() {
 			@Override
