@@ -253,6 +253,34 @@ public class SynmvFrame extends JFrame {
 	}
 	
 	/**
+	 * Returns the next line delivered by the buffers readLine() method that is not empty
+	 * and is no comment (except for the (DUEDATE|SCHEDULE|WEIGHT)_INDICATOR) or null, if
+	 * there is no next line with these properties.
+	 * 
+	 * @param buf
+	 * 			the BufferedReader to read lines from
+	 * @return the next non empty and no comment line
+	 * @throws IOException if an reading error occurs
+	 */
+	private String getNextLine(BufferedReader buf) throws IOException {
+		String line;
+		while((line = buf.readLine()) != null) {
+			line = line.trim();
+			if(!line.isEmpty()) {
+				if(line.startsWith(DUEDATE_INDICATOR) ||
+						line.startsWith(SCHEDULE_INDICATOR) ||
+						line.startsWith(WEIGHT_INDICATOR)) {
+					return line;
+				}
+				if(line.charAt(0) != '#') {
+					return line;
+				}
+			}
+		}
+		return null;
+	}
+	
+	/**
 	 * Reads jobs from a file.
 	 * 
 	 * @param filename
@@ -365,13 +393,22 @@ public class SynmvFrame extends JFrame {
 					schedule = readSchedule(line, n, filename, lineNo);
 					continue;
 				}
-				
 				//look for due dates
-				if(line.startsWith(DUEDATE_INDICATOR)) {
+				else if(line.startsWith(DUEDATE_INDICATOR) || (!line.isEmpty() && line.charAt(0) != '#' && new StringTokenizer(line).countTokens() == 2)) {
+					if(line.startsWith(DUEDATE_INDICATOR)) {
+						line = buf.readLine();
+						if(line == null) {
+							throw new InvalidFileFormatException("file " + filename + " ends with due date indicator");
+						}
+					}
 					i = 0;
-					while(i < n && (line = buf.readLine()) != null) {
+					do {
 						line = line.trim();
 						lineNo++;
+						if(line.isEmpty() || line.charAt(0) == '#') {
+							continue;
+						}
+						
 						tok = new StringTokenizer(line);
 						if(tok.countTokens() != 2) {
 							throw new InvalidFileFormatException("in file " + filename + " in line " +
@@ -398,7 +435,7 @@ public class SynmvFrame extends JFrame {
 						
 						retjobs[id-1].setDuedate(duedate);
 						i++;
-					}
+					} while(i < n && (line = buf.readLine()) != null);
 					if(i < n) {
 						throw new InvalidFileFormatException("in file " + filename + " there are only " + i + " due dates instead of " + n);
 					}
@@ -407,12 +444,14 @@ public class SynmvFrame extends JFrame {
 					}
 					continue;
 				}
-				
-				if(line.isEmpty() || line.charAt(0) == '#')
+				//empty or comment line
+				else if(line.isEmpty() || line.charAt(0) == '#') {
 					continue;
-				
-				throw new InvalidFileFormatException("in file " + filename + " in line " + lineNo + 
-						" there is unknown information: " + line);
+				}
+				else {
+					throw new InvalidFileFormatException("in file " + filename + " in line " + lineNo + 
+							" there is unknown information: " + line);
+				}
 			}
 			
 			if(schedule == null) {// default schedule
