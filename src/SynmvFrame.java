@@ -153,7 +153,7 @@ public class SynmvFrame extends JFrame {
 	/**
 	 * This exception shall be thrown, if a file read has an invalid format.
 	 * 
-	 * @author sebastian
+	 * @author sebrockm
 	 *
 	 */
 	@SuppressWarnings("unused")	
@@ -391,10 +391,12 @@ public class SynmvFrame extends JFrame {
 						throw new InvalidFileFormatException("file " + filename + " ends with schedule indicator");
 					}
 					schedule = readSchedule(line, n, filename, lineNo);
-					continue;
 				}
 				//look for due dates
-				else if(line.startsWith(DUEDATE_INDICATOR) || (!line.isEmpty() && line.charAt(0) != '#' && new StringTokenizer(line).countTokens() == 2)) {
+				else if(line.startsWith(DUEDATE_INDICATOR) || //either there is a due date indicator
+						(!SynmvJob.hasDuedates && !SynmvJob.hasWeights && //or neither due dates nor weights have been read yet
+						!line.isEmpty() && line.charAt(0) != '#' && new StringTokenizer(line).countTokens() == 2)) {
+					
 					if(line.startsWith(DUEDATE_INDICATOR)) {
 						line = buf.readLine();
 						if(line == null) {
@@ -442,7 +444,58 @@ public class SynmvFrame extends JFrame {
 					else {
 						SynmvJob.hasDuedates = true;
 					}
-					continue;
+				}
+				else if(line.startsWith(WEIGHT_INDICATOR) || //either there is a weight indicator
+						(SynmvJob.hasDuedates && !SynmvJob.hasWeights && //or due dates have been read already and weights have not
+								!line.isEmpty() && line.charAt(0) != '#' && new StringTokenizer(line).countTokens() == 2)) {
+					
+					if(line.startsWith(WEIGHT_INDICATOR)) {
+						line = buf.readLine();
+						if(line == null) {
+							throw new InvalidFileFormatException("file " + filename + " ends with weight indicator");
+						}
+					}
+					i = 0;
+					do {
+						line = line.trim();
+						lineNo++;
+						if(line.isEmpty() || line.charAt(0) == '#') {
+							continue;
+						}
+						
+						tok = new StringTokenizer(line);
+						if(tok.countTokens() != 2) {
+							throw new InvalidFileFormatException("in file " + filename + " in line " +
+									lineNo + " there are " + tok.countTokens() + " instead of 2 tokens");
+						}
+						
+						int id;
+						try {
+							id = Integer.parseInt(tok.nextToken());
+						} catch (NumberFormatException e) {
+							throw new InvalidFileFormatException("in file " + filename + " in line " + lineNo + ": " + e.getMessage());
+						}
+						if(id < 1 || id > n) {
+							throw new InvalidFileFormatException("in file " + filename + " in line " +
+									lineNo + " the job id is not between 1 and " + n);
+						}
+						
+						float weight;
+						try {
+							weight = Float.parseFloat(tok.nextToken());
+						} catch (NumberFormatException e) {
+							throw new InvalidFileFormatException("in file " + filename + " in line " + lineNo + ": " + e.getMessage());
+						}
+						
+						retjobs[id-1].setWeight(weight);
+						i++;
+					} while(i < n && (line = buf.readLine()) != null);
+					if(i < n) {
+						throw new InvalidFileFormatException("in file " + filename + " there are only " + i + " weights instead of " + n);
+					}
+					else {
+						SynmvJob.hasWeights = true;
+					}
 				}
 				//empty or comment line
 				else if(line.isEmpty() || line.charAt(0) == '#') {
@@ -526,6 +579,17 @@ public class SynmvFrame extends JFrame {
 			writer.newLine();
 			for(SynmvJob job : jobs) {
 				writer.write(job.getID() + " " + job.getDuedate());
+				writer.newLine();
+			}
+		}
+		
+		//write weights
+		if(SynmvJob.hasWeights) {
+			writer.newLine();
+			writer.write(WEIGHT_INDICATOR);
+			writer.newLine();
+			for(SynmvJob job : jobs) {
+				writer.write(job.getID() + " " + job.getWeight());
 				writer.newLine();
 			}
 		}

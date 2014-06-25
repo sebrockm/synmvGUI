@@ -96,6 +96,11 @@ public class SynmvJob {
 	public static boolean hasDuedates = false;
 	
 	/**
+	 * Indicates whether the jobs have weights.
+	 */
+	public static boolean hasWeights = false;
+	
+	/**
 	 * This Runnable is used as a callback that is invoked every time
 	 * the layout of the SynmvJobs among each other changes.
 	 * It shall calculate their new positions.
@@ -119,6 +124,10 @@ public class SynmvJob {
 	 */
 	private float duedate;
 	
+	/**
+	 * The job's weight. A weight of 1 is default.
+	 */
+	private float weight;
 	
 	/**
 	 * The JPanel the job will be displayed in.
@@ -174,10 +183,16 @@ public class SynmvJob {
 	private final JLabel endTimeLabel = new JLabel();
 	
 	/**
-	 * A JTextField in the info box that displays the the due date of the job or
+	 * A JTextField in the info box that displays the due date of the job or
 	 * '-' if it does not have one. It can be used to enter a new due date.
 	 */
 	private final JTextField duedateField = new JTextField();
+	
+	/**
+	 * A JTextField in the info box that displays the weight of the job or
+	 * '1' if it does not have one. It can be used to enter a new weight.
+	 */
+	private final JTextField weightField = new JTextField();
 	
 	/**
 	 * A reference to the job's predecessor in the current schedule or null if
@@ -331,7 +346,7 @@ public class SynmvJob {
 	 * 			an array of process times
 	 */
 	public SynmvJob(final JPanel container, int id, float[] times) {
-		this(container, id, times, -1.f);
+		this(container, id, times, -1.f, 1.f);
 	}
 	
 	/**
@@ -493,7 +508,7 @@ public class SynmvJob {
 	private void initInfobox() {
 		infobox.setVisible(false);
 		
-		int rows = 5 + times.length;
+		int rows = 6 + times.length;
 		infobox.setLayout(new GridLayout(rows, 2));
 		
 		infobox.add(new JLabel("id "));
@@ -610,6 +625,24 @@ public class SynmvJob {
 				runCallback();
 			}
 		});
+		
+		infobox.add(new JLabel("weight "));
+		infobox.add(weightField);
+		weightField.addActionListener(new ActionListener() {
+			@Override
+			public void actionPerformed(ActionEvent e) {
+				float t;
+				try {
+					t = Float.parseFloat(weightField.getText());
+				} catch (NumberFormatException ex) {
+					weightField.setText("" + weight);
+					return;
+				}
+				
+				weight = t;
+				runCallback();
+			}
+		});
 	}
 	
 	/**
@@ -626,6 +659,7 @@ public class SynmvJob {
 		startTimeLabel.setText("" + getStartTime());
 		endTimeLabel.setText("" + getEndTime());
 		duedateField.setText("" + (duedate < 0.f ? "-" : duedate));
+		weightField.setText("" + weight);
 		
 		infobox.pack();
 	}
@@ -641,12 +675,15 @@ public class SynmvJob {
 	 * 			an array of the job's process times
 	 * @param duedate
 	 * 			the due date, a negative due date means there is none
+	 * @param weight
+	 * 		the weight
 	 */
-	public SynmvJob(final JPanel container, int id, float[] times, float duedate) {
+	public SynmvJob(final JPanel container, int id, float[] times, float duedate, float weight) {
 		this.id = id;
 		this.parent = container;
 		this.times = times;
 		this.duedate = duedate;
+		this.weight = weight;
 		this.number.setVisible(true);
 		this.number.setHorizontalAlignment(SwingConstants.CENTER);
 		
@@ -688,6 +725,23 @@ public class SynmvJob {
 	 */
 	public void setDuedate(float duedate) {
 		this.duedate = duedate;
+	}
+	
+	/**
+	 * 
+	 * @return the job's weight
+	 */
+	public float getWeight() {
+		return weight;
+	}
+	
+	/**
+	 * 
+	 * @param weight
+	 * 		new weight
+	 */
+	public void setWeight(float weight) {
+		this.weight = weight;
 	}
 	
 	/**
@@ -774,7 +828,7 @@ public class SynmvJob {
 	 * Swaps (exchanges) this job with another and invokes the callback.
 	 * 
 	 * @param other
-	 * 			the job to be swaped with
+	 * 			the job to be swapped with
 	 */
 	public void swapWith(SynmvJob other) {
 		if(other == next) {
