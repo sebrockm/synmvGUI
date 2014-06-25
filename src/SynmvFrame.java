@@ -674,6 +674,8 @@ public class SynmvFrame extends JFrame {
 			}
 		});
 
+		this.add(label,BorderLayout.SOUTH);
+		label.setSize(280, 15);
 		
 		scroll.setViewportView(jobcontainer);
 		this.add(scroll);
@@ -702,8 +704,6 @@ public class SynmvFrame extends JFrame {
 		variantsGroup.add(noWait);
 		variantsGroup.add(blocking);
 		
-		jobcontainer.add(label, BorderLayout.SOUTH);
-		label.setSize(280, 15);
 	
 		fileChooser.setCurrentDirectory(new File(System.getProperty("user.dir")));
 
