@@ -222,7 +222,20 @@ public class SynmvJob {
 	 * true, when the job is being moved and the mouse button is still pressed.
 	 */
 	private boolean mouseHold = false;
+	
+	/**
+	 * save already calculated offsets
+	 */
+	private Float[] offsets;
 
+	/**
+	 * Deletes old offsets so that they have to be calculated again.
+	 */
+	public void deleteOldOffsets() {
+		for(int i = 0; i < offsets.length; i++) {
+			offsets[i] = null;
+		}
+	}
 	
 	/**
 	 * Calculates the the time this job will be on a machine in the current
@@ -272,41 +285,60 @@ public class SynmvJob {
 			throw new IllegalArgumentException("'machine' must be in [0,getMachineCount()[");
 		}
 		
+		if(offsets[machine] != null) {
+			return offsets[machine];
+		}
+		
 		switch(SynmvJob.variant) {
 		case synchronous:
 			if(pred == null) {
 				if(machine == 0) {
-					return 0;
+					return offsets[machine] = 0.f;
 				}
-				return getOffset(machine-1) + maxLen(machine-1);
+				return offsets[machine] = getOffset(machine-1) + maxLen(machine-1);
 			}
-			return pred.getOffset(machine) + pred.maxLen(machine);
+			return offsets[machine] = pred.getOffset(machine) + pred.maxLen(machine);
 			
 		case asynchronous:
 			if(pred == null && machine == 0) {
-				return 0;
+				return offsets[machine] = 0.f;
 			}
 			if(pred == null) {
-				return getOffset(machine-1) + getTime(machine-1);
+				return offsets[machine] = getOffset(machine-1) + getTime(machine-1);
 			}
 			if(machine == 0) {
-				return pred.getOffset(machine) + pred.getTime(machine);
+				return offsets[machine] = pred.getOffset(machine) + pred.getTime(machine);
 			}
-			return Math.max(getOffset(machine-1) + getTime(machine-1), pred.getOffset(machine) + pred.getTime(machine));
+			return offsets[machine] = Math.max(getOffset(machine-1) + getTime(machine-1), pred.getOffset(machine) + pred.getTime(machine));
 			
 		case noWait:
 			if(machine == 0) {
-				return getNoWaitOffset();
+				return offsets[machine] = getNoWaitOffset();
 			}
-			return getOffset(machine-1) + getTime(machine-1);
+			return offsets[machine] = getOffset(machine-1) + getTime(machine-1);
 			
 		case blocking:
-			break;
+			if(pred == null) {
+				if(machine == 0) {
+					return 0;
+				}
+				return offsets[machine] = getOffset(machine-1) + getTime(machine-1);
+			}
+			if(machine == getMachineCount() - 1) {
+				if(machine == 0) {
+					return offsets[machine] = pred.getOffset(0) + pred.getTime(0);
+				}
+				return offsets[machine] = Math.max(pred.getOffset(machine) + pred.getTime(machine), getOffset(machine-1) + getTime(machine-1));
+			}
+			if(machine == 0) {
+				return offsets[machine] = Math.max(pred.getOffset(0) + pred.getTime(0), pred.getOffset(1));
+			}
+			return offsets[machine] = Math.max(pred.getOffset(machine) + pred.getTime(machine), 
+					Math.max(getOffset(machine-1) + getTime(machine-1), pred.getOffset(machine+1)));
+
 		default:
 			throw new RuntimeException("unknown variant, this cannot happen...");
 		}
-		
-		return 0;
 	}
 	
 	/**
@@ -738,6 +770,7 @@ public class SynmvJob {
 		infoTimeFields = new JTextField[times.length];
 		slots = new JLabel[times.length];
 		textFields = new JTextField[times.length];
+		offsets = new Float[times.length];
 		
 		for(int i = 0; i < textFields.length; i++) {
 			textFields[i] = new JTextField("" + times[i]);
@@ -1045,12 +1078,10 @@ public class SynmvJob {
 		case noWait:
 			return getOffset(getMachineCount()-1) + getTime(getMachineCount()-1);
 		case blocking:
-			break;
+			return getOffset(getMachineCount()-1) + getTime(getMachineCount()-1);
 		default:
 			throw new RuntimeException("unknown variant, this cannot happen...");
 		}
-		
-		return 0;
 	}
 	
 	/**

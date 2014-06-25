@@ -182,6 +182,10 @@ public class SynmvFrame extends JFrame {
 	private final Runnable callback = new Runnable(){
 		@Override
 		public void run() {
+			for(SynmvJob job : jobs) {
+				job.deleteOldOffsets();
+			}
+			
 			float cmax = 0;
 			float lmax = 0;
 			LinkedList<SynmvJob> critLmax = new LinkedList<SynmvJob>();
