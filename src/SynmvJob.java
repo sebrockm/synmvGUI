@@ -98,7 +98,7 @@ public class SynmvJob {
 	public static boolean continuousShift = true;
 	
 	/**
-	 * Corresponds to the synchronous JCheckbox
+	 * Corresponds to the variants JRadioButtons.
 	 */
 	public static Variant variant = Variant.synchronous;
 	
@@ -260,8 +260,8 @@ public class SynmvJob {
 	/**
 	 * Calculates the offset of this job on a machine. This is the time when
 	 * that machine begins to process this job in the current schedule.
-	 * This method does care about the synchronous flag which results in a
-	 * synchronous or asynchronous calculation.
+	 * This method does care about the variants flag which results in a
+	 * synchronous, asynchronous, no-wait or blocking calculation.
 	 * 
 	 * @param machine
 	 * 			the machine number starting with 0
@@ -271,6 +271,7 @@ public class SynmvJob {
 		if(machine < 0 || machine >= getMachineCount()) {
 			throw new IllegalArgumentException("'machine' must be in [0,getMachineCount()[");
 		}
+		
 		switch(SynmvJob.variant) {
 		case synchronous:
 			if(pred == null) {
@@ -294,7 +295,11 @@ public class SynmvJob {
 			return Math.max(getOffset(machine-1) + getTime(machine-1), pred.getOffset(machine) + pred.getTime(machine));
 			
 		case noWait:
-			break;
+			if(machine == 0) {
+				return getNoWaitOffset();
+			}
+			return getOffset(machine-1) + getTime(machine-1);
+			
 		case blocking:
 			break;
 		default:
@@ -302,6 +307,27 @@ public class SynmvJob {
 		}
 		
 		return 0;
+	}
+	
+	/**
+	 * Calculates the offset of the first job when the no-wait variant is selected.
+	 * @return no-wait offset
+	 */
+	private float getNoWaitOffset() {
+		if(pred == null) {
+			return 0;
+		}
+		
+		float predSum = pred.getTime(0);
+		float thisSum = 0;
+		float offset = predSum;
+		for(int i = 1; i < getMachineCount(); i++) {
+			predSum += pred.getTime(i);
+			thisSum += getTime(i-1);
+			offset = Math.max(offset, predSum - thisSum);
+		}
+		
+		return offset + pred.getNoWaitOffset();
 	}
 	
 	/**
@@ -994,8 +1020,8 @@ public class SynmvJob {
 	
 	/**
 	 * Calculates the time when this job starts on the first machine.
-	 * This method does care about the synchronous flag which results in a
-	 * synchronous or asynchronous calculation.
+	 * This method does care about the variants flag which results in a
+	 * synchronous, asynchronous, no-wait or blocking calculation.
 	 * 
 	 * @return the start time of the job
 	 */
@@ -1005,8 +1031,8 @@ public class SynmvJob {
 	
 	/**
 	 * Calculates the time when this job is done on the last machine.
-	 * This method does care about the synchronous flag which results in a
-	 * synchronous or asynchronous calculation.
+	 * This method does care about the variants flag which results in a
+	 * synchronous, asynchronous, no-wait or blocking calculation.
 	 * 
 	 * @return the end time of the job
 	 */
@@ -1017,7 +1043,7 @@ public class SynmvJob {
 		case asynchronous:
 			return getOffset(getMachineCount()-1) + getTime(getMachineCount()-1);
 		case noWait:
-			break;
+			return getOffset(getMachineCount()-1) + getTime(getMachineCount()-1);
 		case blocking:
 			break;
 		default:
