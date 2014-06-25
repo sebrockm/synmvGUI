@@ -187,13 +187,22 @@ public class SynmvFrame extends JFrame {
 			}
 			
 			float cmax = 0;
-			float lmax = 0;
+			float lmax = Float.NEGATIVE_INFINITY;
+			float sumCmax = 0;
+			int umax = 0;
+			float tmax = 0;
 			LinkedList<SynmvJob> critLmax = new LinkedList<SynmvJob>();
 			for(SynmvJob job : jobs) {
 				if(job != null) {
 					job.setLocations();
 					float finished = job.getEndTime();
+					
 					cmax = Math.max(cmax, finished);
+					sumCmax += finished;
+					if(finished > job.getDuedate()) {
+						umax++;
+						tmax = Math.max(tmax, finished - job.getDuedate());
+					}
 					
 					if(lmax == finished - job.getDuedate()) {
 						critLmax.add(job);
@@ -205,9 +214,13 @@ public class SynmvFrame extends JFrame {
 					}
 				}
 			}
+			
 			String text = "Cmax: " + cmax;
+			text += "    " + (char)931 + "Cj: " + sumCmax; 
 			if(SynmvJob.hasDuedates) {
 				text += "    Lmax: " + lmax;
+				text += "    Tmax: " + tmax;
+				text += "    Umax: " + umax;
 				for(SynmvJob job : jobs) {
 					job.setDefaultColor();
 				}
@@ -216,6 +229,8 @@ public class SynmvFrame extends JFrame {
 				}
 			}
 			label.setText(text);
+			int width = label.getFontMetrics(label.getFont()).stringWidth(label.getText());
+			label.setSize(width, label.getHeight());
 		}
 	};
 

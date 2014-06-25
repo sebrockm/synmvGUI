@@ -285,7 +285,7 @@ public class SynmvJob {
 			throw new IllegalArgumentException("'machine' must be in [0,getMachineCount()[");
 		}
 		
-		if(offsets[machine] != null) {
+		if(offsets[machine] != null) { //offset has already been calculated
 			return offsets[machine];
 		}
 		
@@ -320,7 +320,7 @@ public class SynmvJob {
 		case blocking:
 			if(pred == null) {
 				if(machine == 0) {
-					return 0;
+					return offsets[machine] = 0.f;
 				}
 				return offsets[machine] = getOffset(machine-1) + getTime(machine-1);
 			}
@@ -331,10 +331,9 @@ public class SynmvJob {
 				return offsets[machine] = Math.max(pred.getOffset(machine) + pred.getTime(machine), getOffset(machine-1) + getTime(machine-1));
 			}
 			if(machine == 0) {
-				return offsets[machine] = Math.max(pred.getOffset(0) + pred.getTime(0), pred.getOffset(1));
+				return offsets[machine] = pred.getOffset(1);
 			}
-			return offsets[machine] = Math.max(pred.getOffset(machine) + pred.getTime(machine), 
-					Math.max(getOffset(machine-1) + getTime(machine-1), pred.getOffset(machine+1)));
+			return offsets[machine] = Math.max(pred.getOffset(machine+1), getOffset(machine-1) + getTime(machine-1));
 
 		default:
 			throw new RuntimeException("unknown variant, this cannot happen...");
@@ -720,6 +719,10 @@ public class SynmvJob {
 				}
 				
 				weight = t;
+				if(t != 1) {
+					SynmvJob.hasWeights = true;
+				}
+				
 				runCallback();
 			}
 		});
