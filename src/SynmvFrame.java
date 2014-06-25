@@ -19,6 +19,7 @@ import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.StringTokenizer;
 
+import javax.swing.ButtonGroup;
 import javax.swing.JCheckBoxMenuItem;
 import javax.swing.JFileChooser;
 import javax.swing.JFrame;
@@ -28,6 +29,7 @@ import javax.swing.JMenuBar;
 import javax.swing.JMenuItem;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
+import javax.swing.JRadioButtonMenuItem;
 import javax.swing.JScrollPane;
 import javax.swing.KeyStroke;
 import javax.swing.event.ChangeEvent;
@@ -128,11 +130,19 @@ public class SynmvFrame extends JFrame {
 	 * If disabled a mouse shift of a job will not be visualized until the mouse is released.
 	 */
 	private final JCheckBoxMenuItem continuousShift = new JCheckBoxMenuItem("continuous shift", true);
-	
+
 	/**
-	 * Checkbox to switch between a synchronous and an asynchronous schedule.
+	 * Sub menu for variants radio buttons.
 	 */
-	private final JCheckBoxMenuItem synchronous = new JCheckBoxMenuItem("synchronous", true);
+	private final JMenu variantsSubMenu = new JMenu("Variants");
+	
+	private final JRadioButtonMenuItem synchronous = new JRadioButtonMenuItem("synchronous", true);
+	
+	private final JRadioButtonMenuItem asynchronous = new JRadioButtonMenuItem("asynchronous", false);
+	
+	private final JRadioButtonMenuItem noWait = new JRadioButtonMenuItem("no-wait", false);
+	
+	private final JRadioButtonMenuItem blocking = new JRadioButtonMenuItem("blocking", false);
 	
 	
 	/**
@@ -660,8 +670,18 @@ public class SynmvFrame extends JFrame {
 		editMenu.add(zoomOut);
 		editMenu.add(resetZoom);
 		menubar.add(optionsMenu);
-		optionsMenu.add(synchronous);
+		optionsMenu.add(variantsSubMenu);
+		variantsSubMenu.add(synchronous);
+		variantsSubMenu.add(asynchronous);
+		variantsSubMenu.add(noWait);
+		variantsSubMenu.add(blocking);
 		optionsMenu.add(continuousShift);
+		
+		ButtonGroup variantsGroup = new ButtonGroup();
+		variantsGroup.add(synchronous);
+		variantsGroup.add(asynchronous);
+		variantsGroup.add(noWait);
+		variantsGroup.add(blocking);
 		
 		jobcontainer.add(label, BorderLayout.SOUTH);
 		label.setSize(280, 15);
@@ -776,10 +796,43 @@ public class SynmvFrame extends JFrame {
 		synchronous.addChangeListener(new ChangeListener() {
 			@Override
 			public void stateChanged(ChangeEvent arg0) {
-				SynmvJob.synchronous = synchronous.getState();
-				SynmvJob.runCallback();
+				if(synchronous.isSelected()) {
+					SynmvJob.variant = SynmvJob.Variant.synchronous;
+					SynmvJob.runCallback();
+				}
 			}
 		});
+		
+		asynchronous.addChangeListener(new ChangeListener() {
+			@Override
+			public void stateChanged(ChangeEvent arg0) {
+				if(asynchronous.isSelected()) {
+					SynmvJob.variant = SynmvJob.Variant.asynchronous;
+					SynmvJob.runCallback();
+				}
+			}
+		});
+		
+		noWait.addChangeListener(new ChangeListener() {
+			@Override
+			public void stateChanged(ChangeEvent arg0) {
+				if(noWait.isSelected()) {
+					SynmvJob.variant = SynmvJob.Variant.noWait;
+					SynmvJob.runCallback();
+				}
+			}
+		});
+
+		blocking.addChangeListener(new ChangeListener() {
+			@Override
+			public void stateChanged(ChangeEvent arg0) {
+				if(blocking.isSelected()) {
+					SynmvJob.variant = SynmvJob.Variant.blocking;
+					SynmvJob.runCallback();
+				}
+			}
+		});
+		
 		continuousShift.addChangeListener(new ChangeListener() {	
 			@Override
 			public void stateChanged(ChangeEvent arg0) {

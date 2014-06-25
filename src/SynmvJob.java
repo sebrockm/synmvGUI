@@ -30,6 +30,18 @@ import javax.swing.text.BadLocationException;
  *
  */
 public class SynmvJob {
+	
+	/**
+	 * Enumeration for the different variants.
+	 * @author sebrockm
+	 *
+	 */
+	public static enum Variant {
+		synchronous,
+		asynchronous,
+		noWait,
+		blocking
+	}
 
 	/**
 	 * Deque that stores all done actions to be able to undo them.
@@ -88,7 +100,7 @@ public class SynmvJob {
 	/**
 	 * Corresponds to the synchronous JCheckbox
 	 */
-	public static boolean synchronous = true;
+	public static Variant variant = Variant.synchronous;
 	
 	/**
 	 * Indicates whether the jobs have due dates.
@@ -259,7 +271,8 @@ public class SynmvJob {
 		if(machine < 0 || machine >= getMachineCount()) {
 			throw new IllegalArgumentException("'machine' must be in [0,getMachineCount()[");
 		}
-		if(SynmvJob.synchronous) {
+		switch(SynmvJob.variant) {
+		case synchronous:
 			if(pred == null) {
 				if(machine == 0) {
 					return 0;
@@ -267,8 +280,8 @@ public class SynmvJob {
 				return getOffset(machine-1) + maxLen(machine-1);
 			}
 			return pred.getOffset(machine) + pred.maxLen(machine);
-		}
-		else {
+			
+		case asynchronous:
 			if(pred == null && machine == 0) {
 				return 0;
 			}
@@ -279,7 +292,16 @@ public class SynmvJob {
 				return pred.getOffset(machine) + pred.getTime(machine);
 			}
 			return Math.max(getOffset(machine-1) + getTime(machine-1), pred.getOffset(machine) + pred.getTime(machine));
+			
+		case noWait:
+			break;
+		case blocking:
+			break;
+		default:
+			throw new RuntimeException("unknown variant, this cannot happen...");
 		}
+		
+		return 0;
 	}
 	
 	/**
@@ -989,12 +1011,20 @@ public class SynmvJob {
 	 * @return the end time of the job
 	 */
 	public float getEndTime() {
-		if(SynmvJob.synchronous) {
+		switch(SynmvJob.variant) {
+		case synchronous:
 			return getOffset(getMachineCount()-1) + maxLen(getMachineCount()-1);
-		}
-		else {
+		case asynchronous:
 			return getOffset(getMachineCount()-1) + getTime(getMachineCount()-1);
+		case noWait:
+			break;
+		case blocking:
+			break;
+		default:
+			throw new RuntimeException("unknown variant, this cannot happen...");
 		}
+		
+		return 0;
 	}
 	
 	/**
