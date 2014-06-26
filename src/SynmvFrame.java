@@ -179,18 +179,32 @@ public class SynmvFrame extends JFrame {
 	 * Umax checkbox
 	 */
 	private final JCheckBoxMenuItem uMaxCheck = new JCheckBoxMenuItem("Umax", false);
+
+	/**
+	 * Sub menu for highlight checkboxes.
+	 */
+	private final JMenu highlightSubMenu = new JMenu("Highlights");
+	
+	private final JCheckBoxMenuItem highlightCmax = new JCheckBoxMenuItem("critical Cmax");
+	
+	private final JCheckBoxMenuItem highlightLmax = new JCheckBoxMenuItem("critical Lmax");
+	
+	private final JCheckBoxMenuItem highlightTmax = new JCheckBoxMenuItem("critical Tmax");
+	
+	private final JCheckBoxMenuItem highlightUmax = new JCheckBoxMenuItem("all late");
+	
+	/**
+	 * Use weights checkbox.
+	 * If enabled, the weights will be used in the calculation of the objective functions.
+	 */
+	private final JCheckBoxMenuItem useWeights = new JCheckBoxMenuItem("use weights", false);
 	
 	/**
 	 * Continuous shift checkbox.
 	 * If disabled, a mouse shift of a job will not be visualized until the mouse is released.
 	 */
 	private final JCheckBoxMenuItem continuousShift = new JCheckBoxMenuItem("continuous shift", true);
-
-	/**
-	 * use weights checkbox.
-	 * If enabled, the weights will be used in the calculation of the objective functions.
-	 */
-	private final JCheckBoxMenuItem useWeights = new JCheckBoxMenuItem("use weights", false);
+	
 	
 	/**
 	 * An array of SynmvJobs that shall be displayed in the window.
@@ -239,6 +253,11 @@ public class SynmvFrame extends JFrame {
 				lMaxCheck.setEnabled(SynmvJob.hasDuedates);
 				tMaxCheck.setEnabled(SynmvJob.hasDuedates);
 				uMaxCheck.setEnabled(SynmvJob.hasDuedates);
+				
+				highlightCmax.setEnabled(SynmvJob.hasWeights);
+				highlightLmax.setEnabled(SynmvJob.hasDuedates);
+				highlightTmax.setEnabled(SynmvJob.hasDuedates);
+				highlightUmax.setEnabled(SynmvJob.hasDuedates);
 			}
 			
 			float cmax = 0;
@@ -246,7 +265,11 @@ public class SynmvFrame extends JFrame {
 			float sumCmax = 0;
 			float umax = 0;
 			float tmax = 0;
+			
+			LinkedList<SynmvJob> critCmax = new LinkedList<SynmvJob>();
 			LinkedList<SynmvJob> critLmax = new LinkedList<SynmvJob>();
+			LinkedList<SynmvJob> critTmax = new LinkedList<SynmvJob>();
+			LinkedList<SynmvJob> critUmax = new LinkedList<SynmvJob>();
 			for(SynmvJob job : jobs) {
 				if(job != null) {
 					float weight = useWeights.isSelected() ? job.getWeight() : 1;
@@ -254,12 +277,16 @@ public class SynmvFrame extends JFrame {
 					job.setLocations();
 					float finished = job.getEndTime();
 					
-					cmax = Math.max(cmax, weight*finished);
-					sumCmax += weight*finished;
-					if(finished > job.getDuedate()) {
-						umax += weight;
-						tmax = Math.max(tmax, weight * (finished - job.getDuedate()));
+					if(cmax == weight*finished) {
+						critCmax.add(job);
 					}
+					else if(cmax < weight*finished) {
+						cmax = weight * finished;
+						critCmax.clear();
+						critCmax.add(job);
+					}
+					
+					sumCmax += weight*finished;
 					
 					if(lmax == weight * (finished - job.getDuedate())) {
 						critLmax.add(job);
@@ -268,6 +295,20 @@ public class SynmvFrame extends JFrame {
 						lmax = weight * (finished - job.getDuedate());
 						critLmax.clear();
 						critLmax.add(job);
+					}
+					
+					if(tmax == weight * (finished - job.getDuedate())) {
+						critTmax.add(job);
+					}
+					else if(tmax < weight * (finished - job.getDuedate())) {
+						tmax = weight * (finished - job.getDuedate());
+						critTmax.clear();
+						critTmax.add(job);
+					}
+					
+					if(finished > job.getDuedate()) {
+						umax += weight;
+						critUmax.add(job);
 					}
 				}
 			}
@@ -288,13 +329,32 @@ public class SynmvFrame extends JFrame {
 			if(uMaxCheck.isEnabled() && uMaxCheck.isSelected()) {
 				text += "Umax: " + umax;
 			}
-				
-			if(SynmvJob.hasDuedates) {
-				for(SynmvJob job : jobs) {
-					job.setDefaultColor();
+			
+			for(SynmvJob job : jobs) {
+				job.setDefaultColor();
+			}
+			
+			if(highlightCmax.isEnabled() && highlightCmax.isSelected()) {
+				for(SynmvJob job : critCmax) {
+					job.highlight(Color.BLUE);
 				}
+			}
+				
+			if(highlightLmax.isEnabled() && highlightLmax.isSelected()) {
 				for(SynmvJob job : critLmax) {
-					job.highlight();
+					job.highlight(Color.ORANGE);
+				}
+			}
+			
+			if(highlightTmax.isEnabled() && highlightTmax.isSelected()) {
+				for(SynmvJob job : critTmax) {
+					job.highlight(Color.GREEN);
+				}
+			}
+			
+			if(highlightUmax.isEnabled() && highlightUmax.isSelected()) {
+				for(SynmvJob job : critUmax) {
+					job.highlight(Color.MAGENTA);
 				}
 			}
 			
@@ -777,6 +837,11 @@ public class SynmvFrame extends JFrame {
 		objectiveFunctionsSubMenu.add(lMaxCheck);
 		objectiveFunctionsSubMenu.add(tMaxCheck);
 		objectiveFunctionsSubMenu.add(uMaxCheck);
+		optionsMenu.add(highlightSubMenu);
+		highlightSubMenu.add(highlightCmax);
+		highlightSubMenu.add(highlightLmax);
+		highlightSubMenu.add(highlightTmax);
+		highlightSubMenu.add(highlightUmax);
 		optionsMenu.add(useWeights);
 		optionsMenu.add(continuousShift);
 		
@@ -800,7 +865,7 @@ public class SynmvFrame extends JFrame {
 					} catch (FileNotFoundException e) {
 						JOptionPane.showMessageDialog(SynmvFrame.this, e.getMessage(), "file not found", JOptionPane.ERROR_MESSAGE);
 					} catch (InvalidFileFormatException e) {
-						JOptionPane.showMessageDialog(SynmvFrame.this, e.getMessage(), "invalide file format", JOptionPane.ERROR_MESSAGE);
+						JOptionPane.showMessageDialog(SynmvFrame.this, e.getMessage(), "invalid file format", JOptionPane.ERROR_MESSAGE);
 					}
 					
 					if(tmp == null) {
@@ -946,6 +1011,11 @@ public class SynmvFrame extends JFrame {
 		lMaxCheck.addChangeListener(callbackRunner);
 		tMaxCheck.addChangeListener(callbackRunner);
 		uMaxCheck.addChangeListener(callbackRunner);
+		
+		highlightCmax.addChangeListener(callbackRunner);
+		highlightLmax.addChangeListener(callbackRunner);
+		highlightTmax.addChangeListener(callbackRunner);
+		highlightUmax.addChangeListener(callbackRunner);
 		
 		useWeights.addChangeListener(callbackRunner);
 		
