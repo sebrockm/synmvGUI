@@ -151,6 +151,36 @@ public class SynmvFrame extends JFrame {
 	private final JRadioButtonMenuItem blocking = new JRadioButtonMenuItem("blocking", false);
 	
 	/**
+	 * Sub menu for objective functions checkboxes.
+	 */
+	private final JMenu objectiveFunctionsSubMenu = new JMenu("Objective Functions");
+	
+	/**
+	 * Cmax checkbox
+	 */
+	private final JCheckBoxMenuItem cMaxCheck = new JCheckBoxMenuItem("Cmax", true);
+	
+	/**
+	 * sum Cj checkbox
+	 */
+	private final JCheckBoxMenuItem sumCjCheck = new JCheckBoxMenuItem(SIGMA + "Cj", false);
+	
+	/**
+	 * Lmax checkbox
+	 */
+	private final JCheckBoxMenuItem lMaxCheck = new JCheckBoxMenuItem("Lmax", true);
+	
+	/**
+	 * Tmax checkbox
+	 */
+	private final JCheckBoxMenuItem tMaxCheck = new JCheckBoxMenuItem("Tmax", false);
+	
+	/**
+	 * Umax checkbox
+	 */
+	private final JCheckBoxMenuItem uMaxCheck = new JCheckBoxMenuItem("Umax", false);
+	
+	/**
 	 * Continuous shift checkbox.
 	 * If disabled, a mouse shift of a job will not be visualized until the mouse is released.
 	 */
@@ -177,6 +207,8 @@ public class SynmvFrame extends JFrame {
 	 */
 	private final JFileChooser fileChooser = new JFileChooser();
 	
+	private final static char SIGMA = (char) 931;
+	
 	/**
 	 * This exception shall be thrown, if a file read has an invalid format.
 	 * 
@@ -201,6 +233,12 @@ public class SynmvFrame extends JFrame {
 		public void run() {
 			for(SynmvJob job : jobs) {
 				job.deleteOldOffsets();
+			}
+			
+			if(jobs.length > 0) {
+				lMaxCheck.setEnabled(SynmvJob.hasDuedates);
+				tMaxCheck.setEnabled(SynmvJob.hasDuedates);
+				uMaxCheck.setEnabled(SynmvJob.hasDuedates);
 			}
 			
 			float cmax = 0;
@@ -234,12 +272,24 @@ public class SynmvFrame extends JFrame {
 				}
 			}
 			
-			String text = "Cmax: " + cmax;
-			text += "    " + (char)931 + "Cj: " + sumCmax; 
+			String text = "";
+			if(cMaxCheck.isEnabled() && cMaxCheck.isSelected()) {
+				text += "Cmax: " + cmax + "    ";
+			}
+			if(sumCjCheck.isEnabled() && sumCjCheck.isSelected()) {
+				text += SIGMA + "Cj: " + sumCmax + "    ";
+			}
+			if(lMaxCheck.isEnabled() && lMaxCheck.isSelected()) {
+				text += "Lmax: " + lmax + "    ";
+			}
+			if(tMaxCheck.isEnabled() && tMaxCheck.isSelected()) {
+				text += "Tmax: " + tmax + "    ";
+			}
+			if(uMaxCheck.isEnabled() && uMaxCheck.isSelected()) {
+				text += "Umax: " + umax;
+			}
+				
 			if(SynmvJob.hasDuedates) {
-				text += "    Lmax: " + lmax;
-				text += "    Tmax: " + tmax;
-				text += "    Umax: " + umax;
 				for(SynmvJob job : jobs) {
 					job.setDefaultColor();
 				}
@@ -247,6 +297,7 @@ public class SynmvFrame extends JFrame {
 					job.highlight();
 				}
 			}
+			
 			label.setText(text);
 			int width = label.getFontMetrics(label.getFont()).stringWidth(label.getText());
 			label.setSize(width, label.getHeight());
@@ -583,6 +634,11 @@ public class SynmvFrame extends JFrame {
 		
 		SynmvJob.actionList.clear();
 		SynmvJob.undoneActionList.clear();
+		
+		lMaxCheck.setEnabled(SynmvJob.hasDuedates);
+		tMaxCheck.setEnabled(SynmvJob.hasDuedates);
+		uMaxCheck.setEnabled(SynmvJob.hasDuedates);
+		
 		return retjobs;
 	}
 	
@@ -715,8 +771,14 @@ public class SynmvFrame extends JFrame {
 		variantsSubMenu.add(asynchronous);
 		variantsSubMenu.add(noWait);
 		variantsSubMenu.add(blocking);
-		optionsMenu.add(continuousShift);
+		optionsMenu.add(objectiveFunctionsSubMenu);
+		objectiveFunctionsSubMenu.add(cMaxCheck);
+		objectiveFunctionsSubMenu.add(sumCjCheck);
+		objectiveFunctionsSubMenu.add(lMaxCheck);
+		objectiveFunctionsSubMenu.add(tMaxCheck);
+		objectiveFunctionsSubMenu.add(uMaxCheck);
 		optionsMenu.add(useWeights);
+		optionsMenu.add(continuousShift);
 		
 		ButtonGroup variantsGroup = new ButtonGroup();
 		variantsGroup.add(synchronous);
@@ -872,21 +934,30 @@ public class SynmvFrame extends JFrame {
 			}
 		});
 		
+		ChangeListener callbackRunner = new ChangeListener() {	
+			@Override
+			public void stateChanged(ChangeEvent arg0) {
+				SynmvJob.runCallback();
+			}
+		};
+		
+		cMaxCheck.addChangeListener(callbackRunner);
+		sumCjCheck.addChangeListener(callbackRunner);
+		lMaxCheck.addChangeListener(callbackRunner);
+		tMaxCheck.addChangeListener(callbackRunner);
+		uMaxCheck.addChangeListener(callbackRunner);
+		
+		useWeights.addChangeListener(callbackRunner);
+		
 		continuousShift.addChangeListener(new ChangeListener() {	
 			@Override
 			public void stateChanged(ChangeEvent arg0) {
 				SynmvJob.continuousShift = continuousShift.getState();
 			}
 		});
-		
-		useWeights.addChangeListener(new ChangeListener() {	
-			@Override
-			public void stateChanged(ChangeEvent arg0) {
-				SynmvJob.runCallback();
-			}
-		});
 
 		this.pack();
+		SynmvJob.runCallback();
 	}	
 	
 }
