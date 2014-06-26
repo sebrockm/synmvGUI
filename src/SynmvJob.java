@@ -12,6 +12,7 @@ import java.util.LinkedList;
 import javax.swing.JButton;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
+import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JTextField;
 import javax.swing.SwingConstants;
@@ -700,7 +701,39 @@ public class SynmvJob {
 					return;
 				}
 				
+				if(!SynmvJob.hasDuedates && t >= 0) {
+					String input = JOptionPane.showInputDialog(parent, 
+							"Initialize the other jobs' due dates with (enter a float or \"Cmax\"): ", 
+							"Due Date Initialization", JOptionPane.NO_OPTION, null, null, "Cmax").toString();
+					if(input == null) {
+						duedateField.setText("" + (duedate < 0.f ? "-" : duedate));
+						return;
+					}
+					
+					float newDuedate;
+					if(input.equals("Cmax")) {
+						newDuedate = getLastFollower().getEndTime();
+					}
+					else {
+						try {
+							newDuedate = Float.parseFloat(input);
+						} catch(NumberFormatException ex) {
+							duedateField.setText("" + (duedate < 0.f ? "-" : duedate));
+							return;
+						}
+					}
+					
+					SynmvJob tmp = getFirstPredecessor();
+					while(tmp != null) {
+						if(tmp != SynmvJob.this) {
+							tmp.setDuedate(newDuedate);
+						}
+						tmp = tmp.getNext();
+					}
+				}
+				
 				duedate = t;
+				SynmvJob.hasDuedates = true;
 				runCallback();
 			}
 		});
