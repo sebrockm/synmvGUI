@@ -173,25 +173,27 @@ public class SynmvFrame extends JFrame {
 	/**
 	 * Tmax checkbox
 	 */
-	private final JCheckBoxMenuItem tMaxCheck = new JCheckBoxMenuItem("Tmax", false);
+	private final JCheckBoxMenuItem sumTjCheck = new JCheckBoxMenuItem(SIGMA + "Tj", false);
 	
 	/**
 	 * Umax checkbox
 	 */
-	private final JCheckBoxMenuItem uMaxCheck = new JCheckBoxMenuItem("Umax", false);
+	private final JCheckBoxMenuItem sumUjCheck = new JCheckBoxMenuItem(SIGMA + "Uj", false);
 
 	/**
 	 * Sub menu for highlight checkboxes.
 	 */
 	private final JMenu highlightSubMenu = new JMenu("Highlights");
 	
-	private final JCheckBoxMenuItem highlightCmax = new JCheckBoxMenuItem("critical Cmax");
+	/**
+	 * Highlight Lmax check box.
+	 */
+	private final JCheckBoxMenuItem highlightLmax = new JCheckBoxMenuItem("critical Lmax", true);
 	
-	private final JCheckBoxMenuItem highlightLmax = new JCheckBoxMenuItem("critical Lmax");
-	
-	private final JCheckBoxMenuItem highlightTmax = new JCheckBoxMenuItem("critical Tmax");
-	
-	private final JCheckBoxMenuItem highlightUmax = new JCheckBoxMenuItem("all late");
+	/**
+	 * Highlight late jobs check box.
+	 */
+	private final JCheckBoxMenuItem highlightSumUj = new JCheckBoxMenuItem("all late", false);
 	
 	/**
 	 * Use weights checkbox.
@@ -251,110 +253,83 @@ public class SynmvFrame extends JFrame {
 			
 			if(jobs.length > 0) {
 				lMaxCheck.setEnabled(SynmvJob.hasDuedates);
-				tMaxCheck.setEnabled(SynmvJob.hasDuedates);
-				uMaxCheck.setEnabled(SynmvJob.hasDuedates);
+				sumTjCheck.setEnabled(SynmvJob.hasDuedates);
+				sumUjCheck.setEnabled(SynmvJob.hasDuedates);
 				
-				highlightCmax.setEnabled(SynmvJob.hasWeights);
 				highlightLmax.setEnabled(SynmvJob.hasDuedates);
-				highlightTmax.setEnabled(SynmvJob.hasDuedates);
-				highlightUmax.setEnabled(SynmvJob.hasDuedates);
+				highlightSumUj.setEnabled(SynmvJob.hasDuedates);
 			}
 			
 			float cmax = 0;
 			float lmax = Float.NEGATIVE_INFINITY;
-			float sumCmax = 0;
-			float umax = 0;
-			float tmax = 0;
+			float sumCj = 0;
+			float sumUj = 0;
+			float sumTj = 0;
 			
-			LinkedList<SynmvJob> critCmax = new LinkedList<SynmvJob>();
 			LinkedList<SynmvJob> critLmax = new LinkedList<SynmvJob>();
-			LinkedList<SynmvJob> critTmax = new LinkedList<SynmvJob>();
-			LinkedList<SynmvJob> critUmax = new LinkedList<SynmvJob>();
+			LinkedList<SynmvJob> critUj = new LinkedList<SynmvJob>();
 			for(SynmvJob job : jobs) {
 				if(job != null) {
 					float weight = useWeights.isSelected() ? job.getWeight() : 1;
 					
 					job.setLocations();
 					float finished = job.getEndTime();
-					
-					if(cmax == weight*finished) {
-						critCmax.add(job);
-					}
-					else if(cmax < weight*finished) {
-						cmax = weight * finished;
-						critCmax.clear();
-						critCmax.add(job);
+
+					if(cmax < finished) {
+						cmax = finished;
 					}
 					
-					sumCmax += weight*finished;
+					sumCj += weight*finished;
 					
-					if(lmax == weight * (finished - job.getDuedate())) {
+					if(lmax == finished - job.getDuedate()) {
 						critLmax.add(job);
 					}
-					else if(lmax < weight * (finished - job.getDuedate())) {
-						lmax = weight * (finished - job.getDuedate());
+					else if(lmax < finished - job.getDuedate()) {
+						lmax = finished - job.getDuedate();
 						critLmax.clear();
 						critLmax.add(job);
 					}
 					
-					if(tmax == weight * (finished - job.getDuedate())) {
-						critTmax.add(job);
-					}
-					else if(tmax < weight * (finished - job.getDuedate())) {
-						tmax = weight * (finished - job.getDuedate());
-						critTmax.clear();
-						critTmax.add(job);
-					}
+					sumTj += weight * (finished - job.getDuedate());
 					
 					if(finished > job.getDuedate()) {
-						umax += weight;
-						critUmax.add(job);
+						sumUj += weight;
+						critUj.add(job);
 					}
 				}
 			}
 			
+			String w = useWeights.isSelected() ? "wj" : "";
 			String text = "";
 			if(cMaxCheck.isEnabled() && cMaxCheck.isSelected()) {
 				text += "Cmax: " + cmax + "    ";
 			}
 			if(sumCjCheck.isEnabled() && sumCjCheck.isSelected()) {
-				text += SIGMA + "Cj: " + sumCmax + "    ";
+				text += SIGMA + w + "Cj: " + sumCj + "    ";
 			}
 			if(lMaxCheck.isEnabled() && lMaxCheck.isSelected()) {
 				text += "Lmax: " + lmax + "    ";
 			}
-			if(tMaxCheck.isEnabled() && tMaxCheck.isSelected()) {
-				text += "Tmax: " + tmax + "    ";
+			if(sumTjCheck.isEnabled() && sumTjCheck.isSelected()) {
+				text += SIGMA + w + "Tj: " + sumTj + "    ";
 			}
-			if(uMaxCheck.isEnabled() && uMaxCheck.isSelected()) {
-				text += "Umax: " + umax;
+			if(sumUjCheck.isEnabled() && sumUjCheck.isSelected()) {
+				text += SIGMA + w + "Uj: " + sumUj;
 			}
 			
 			for(SynmvJob job : jobs) {
 				job.setDefaultColor();
 			}
 			
-			if(highlightCmax.isEnabled() && highlightCmax.isSelected()) {
-				for(SynmvJob job : critCmax) {
-					job.highlight(Color.BLUE);
+			if(highlightSumUj.isEnabled() && highlightSumUj.isSelected()) {
+				for(SynmvJob job : critUj) {
+					job.highlight(Color.YELLOW);
 				}
 			}
 				
 			if(highlightLmax.isEnabled() && highlightLmax.isSelected()) {
 				for(SynmvJob job : critLmax) {
 					job.highlight(Color.ORANGE);
-				}
-			}
-			
-			if(highlightTmax.isEnabled() && highlightTmax.isSelected()) {
-				for(SynmvJob job : critTmax) {
-					job.highlight(Color.GREEN);
-				}
-			}
-			
-			if(highlightUmax.isEnabled() && highlightUmax.isSelected()) {
-				for(SynmvJob job : critUmax) {
-					job.highlight(Color.MAGENTA);
 				}
 			}
 			
@@ -696,8 +671,8 @@ public class SynmvFrame extends JFrame {
 		SynmvJob.undoneActionList.clear();
 		
 		lMaxCheck.setEnabled(SynmvJob.hasDuedates);
-		tMaxCheck.setEnabled(SynmvJob.hasDuedates);
-		uMaxCheck.setEnabled(SynmvJob.hasDuedates);
+		sumTjCheck.setEnabled(SynmvJob.hasDuedates);
+		sumUjCheck.setEnabled(SynmvJob.hasDuedates);
 		
 		return retjobs;
 	}
@@ -835,13 +810,11 @@ public class SynmvFrame extends JFrame {
 		objectiveFunctionsSubMenu.add(cMaxCheck);
 		objectiveFunctionsSubMenu.add(sumCjCheck);
 		objectiveFunctionsSubMenu.add(lMaxCheck);
-		objectiveFunctionsSubMenu.add(tMaxCheck);
-		objectiveFunctionsSubMenu.add(uMaxCheck);
+		objectiveFunctionsSubMenu.add(sumTjCheck);
+		objectiveFunctionsSubMenu.add(sumUjCheck);
 		optionsMenu.add(highlightSubMenu);
-		highlightSubMenu.add(highlightCmax);
 		highlightSubMenu.add(highlightLmax);
-		highlightSubMenu.add(highlightTmax);
-		highlightSubMenu.add(highlightUmax);
+		highlightSubMenu.add(highlightSumUj);
 		optionsMenu.add(useWeights);
 		optionsMenu.add(continuousShift);
 		
@@ -1009,13 +982,11 @@ public class SynmvFrame extends JFrame {
 		cMaxCheck.addChangeListener(callbackRunner);
 		sumCjCheck.addChangeListener(callbackRunner);
 		lMaxCheck.addChangeListener(callbackRunner);
-		tMaxCheck.addChangeListener(callbackRunner);
-		uMaxCheck.addChangeListener(callbackRunner);
+		sumTjCheck.addChangeListener(callbackRunner);
+		sumUjCheck.addChangeListener(callbackRunner);
 		
-		highlightCmax.addChangeListener(callbackRunner);
 		highlightLmax.addChangeListener(callbackRunner);
-		highlightTmax.addChangeListener(callbackRunner);
-		highlightUmax.addChangeListener(callbackRunner);
+		highlightSumUj.addChangeListener(callbackRunner);
 		
 		useWeights.addChangeListener(callbackRunner);
 		

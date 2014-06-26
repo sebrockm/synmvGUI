@@ -702,13 +702,15 @@ public class SynmvJob {
 				}
 				
 				if(!SynmvJob.hasDuedates && t >= 0) {
-					String input = JOptionPane.showInputDialog(parent, 
+					Object o = JOptionPane.showInputDialog(parent, 
 							"Initialize the other jobs' due dates with (enter a float or \"Cmax\"): ", 
-							"Due Date Initialization", JOptionPane.NO_OPTION, null, null, "Cmax").toString();
-					if(input == null) {
+							"Due Date Initialization", JOptionPane.NO_OPTION, null, null, "Cmax");
+					if(o == null) {
 						duedateField.setText("" + (duedate < 0.f ? "-" : duedate));
 						return;
 					}
+					
+					String input = o.toString();
 					
 					float newDuedate;
 					if(input.equals("Cmax")) {
