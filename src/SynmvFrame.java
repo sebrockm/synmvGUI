@@ -124,26 +124,43 @@ public class SynmvFrame extends JFrame {
 	 * Options-menu
 	 */
 	private final JMenu optionsMenu = new JMenu("Options");
-	
-	/**
-	 * Continuous shift checkbox.
-	 * If disabled a mouse shift of a job will not be visualized until the mouse is released.
-	 */
-	private final JCheckBoxMenuItem continuousShift = new JCheckBoxMenuItem("continuous shift", true);
 
 	/**
 	 * Sub menu for variants radio buttons.
 	 */
 	private final JMenu variantsSubMenu = new JMenu("Variants");
 	
+	/**
+	 * synchronous radio button
+	 */
 	private final JRadioButtonMenuItem synchronous = new JRadioButtonMenuItem("synchronous", true);
 	
+	/**
+	 * asynchronous radio button
+	 */
 	private final JRadioButtonMenuItem asynchronous = new JRadioButtonMenuItem("asynchronous", false);
 	
+	/**
+	 * no-wait radio button
+	 */
 	private final JRadioButtonMenuItem noWait = new JRadioButtonMenuItem("no-wait", false);
 	
+	/**
+	 * blocking radio button
+	 */
 	private final JRadioButtonMenuItem blocking = new JRadioButtonMenuItem("blocking", false);
 	
+	/**
+	 * Continuous shift checkbox.
+	 * If disabled, a mouse shift of a job will not be visualized until the mouse is released.
+	 */
+	private final JCheckBoxMenuItem continuousShift = new JCheckBoxMenuItem("continuous shift", true);
+
+	/**
+	 * use weights checkbox.
+	 * If enabled, the weights will be used in the calculation of the objective functions.
+	 */
+	private final JCheckBoxMenuItem useWeights = new JCheckBoxMenuItem("use weights", false);
 	
 	/**
 	 * An array of SynmvJobs that shall be displayed in the window.
@@ -189,26 +206,28 @@ public class SynmvFrame extends JFrame {
 			float cmax = 0;
 			float lmax = Float.NEGATIVE_INFINITY;
 			float sumCmax = 0;
-			int umax = 0;
+			float umax = 0;
 			float tmax = 0;
 			LinkedList<SynmvJob> critLmax = new LinkedList<SynmvJob>();
 			for(SynmvJob job : jobs) {
 				if(job != null) {
+					float weight = useWeights.isSelected() ? job.getWeight() : 1;
+					
 					job.setLocations();
 					float finished = job.getEndTime();
 					
-					cmax = Math.max(cmax, finished);
-					sumCmax += finished;
+					cmax = Math.max(cmax, weight*finished);
+					sumCmax += weight*finished;
 					if(finished > job.getDuedate()) {
-						umax++;
-						tmax = Math.max(tmax, finished - job.getDuedate());
+						umax += weight;
+						tmax = Math.max(tmax, weight * (finished - job.getDuedate()));
 					}
 					
-					if(lmax == finished - job.getDuedate()) {
+					if(lmax == weight * (finished - job.getDuedate())) {
 						critLmax.add(job);
 					}
-					else if(lmax < finished - job.getDuedate()) {
-						lmax = finished - job.getDuedate();
+					else if(lmax < weight * (finished - job.getDuedate())) {
+						lmax = weight * (finished - job.getDuedate());
 						critLmax.clear();
 						critLmax.add(job);
 					}
@@ -697,6 +716,7 @@ public class SynmvFrame extends JFrame {
 		variantsSubMenu.add(noWait);
 		variantsSubMenu.add(blocking);
 		optionsMenu.add(continuousShift);
+		optionsMenu.add(useWeights);
 		
 		ButtonGroup variantsGroup = new ButtonGroup();
 		variantsGroup.add(synchronous);
@@ -856,6 +876,13 @@ public class SynmvFrame extends JFrame {
 			@Override
 			public void stateChanged(ChangeEvent arg0) {
 				SynmvJob.continuousShift = continuousShift.getState();
+			}
+		});
+		
+		useWeights.addChangeListener(new ChangeListener() {	
+			@Override
+			public void stateChanged(ChangeEvent arg0) {
+				SynmvJob.runCallback();
 			}
 		});
 
