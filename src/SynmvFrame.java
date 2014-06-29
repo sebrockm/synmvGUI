@@ -251,7 +251,7 @@ public class SynmvFrame extends JFrame {
 				job.deleteOldOffsets();
 			}
 			
-			if(jobs.length > 0) {
+			if(jobs.length > 0) { //if not jobs are loaded, let all options be enabled
 				lMaxCheck.setEnabled(SynmvJob.hasDuedates);
 				sumTjCheck.setEnabled(SynmvJob.hasDuedates);
 				sumUjCheck.setEnabled(SynmvJob.hasDuedates);
@@ -429,6 +429,9 @@ public class SynmvFrame extends JFrame {
 		SynmvJob[] retjobs = null;
 		BufferedReader buf = new BufferedReader(new FileReader(filename));
 		
+		boolean hasDuedates = false;
+		boolean hasWeights = false;
+		
 		try {
 			//skip empty lines and comments
 			String line;
@@ -528,7 +531,7 @@ public class SynmvFrame extends JFrame {
 				}
 				//look for due dates
 				else if(line.startsWith(DUEDATE_INDICATOR) || //either there is a due date indicator
-						(!SynmvJob.hasDuedates && !SynmvJob.hasWeights && //or neither due dates nor weights have been read yet
+						(!hasDuedates && !hasWeights && //or neither due dates nor weights have been read yet
 						!line.isEmpty() && line.charAt(0) != '#' && new StringTokenizer(line).countTokens() == 2)) {
 					
 					if(line.startsWith(DUEDATE_INDICATOR)) {
@@ -576,11 +579,11 @@ public class SynmvFrame extends JFrame {
 						throw new InvalidFileFormatException("in file " + filename + " there are only " + i + " due dates instead of " + n);
 					}
 					else {
-						SynmvJob.hasDuedates = true;
+						hasDuedates = true;
 					}
 				}
 				else if(line.startsWith(WEIGHT_INDICATOR) || //either there is a weight indicator
-						(SynmvJob.hasDuedates && !SynmvJob.hasWeights && //or due dates have been read already and weights have not
+						(hasDuedates && !hasWeights && //or due dates have been read already and weights have not
 								!line.isEmpty() && line.charAt(0) != '#' && new StringTokenizer(line).countTokens() == 2)) {
 					
 					if(line.startsWith(WEIGHT_INDICATOR)) {
@@ -628,7 +631,7 @@ public class SynmvFrame extends JFrame {
 						throw new InvalidFileFormatException("in file " + filename + " there are only " + i + " weights instead of " + n);
 					}
 					else {
-						SynmvJob.hasWeights = true;
+						hasWeights = true;
 					}
 				}
 				//empty or comment line
@@ -669,6 +672,9 @@ public class SynmvFrame extends JFrame {
 		
 		SynmvJob.actionList.clear();
 		SynmvJob.undoneActionList.clear();
+		
+		SynmvJob.hasDuedates = hasDuedates;
+		SynmvJob.hasWeights = hasWeights;
 		
 		lMaxCheck.setEnabled(SynmvJob.hasDuedates);
 		sumTjCheck.setEnabled(SynmvJob.hasDuedates);

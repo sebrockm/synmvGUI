@@ -1175,7 +1175,19 @@ public class SynmvJob {
 			highlight(Color.RED);
 		}
 		else {
-			highlight(Color.GRAY);
+			if(!SynmvJob.hasWeights) {
+				highlight(Color.GRAY);
+			}
+			else {
+				float maxWeight = 0;
+				SynmvJob tmp = getFirstPredecessor();
+				while(tmp != null) {
+					maxWeight = Math.max(tmp.getWeight(), maxWeight);
+					tmp = tmp.getNext();
+				}
+				float color = (1 - weight / maxWeight) * 0.5f + 0.25f; //normalize to interval [0.25,0.75]
+				highlight(new Color(color, color, color));
+			}
 		}
 	}
 	
