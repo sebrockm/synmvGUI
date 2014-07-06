@@ -1,4 +1,5 @@
 import java.awt.Color;
+import java.awt.Cursor;
 import java.awt.FontMetrics;
 import java.awt.GridLayout;
 import java.awt.Point;
@@ -6,6 +7,7 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
+import java.awt.event.MouseMotionListener;
 import java.util.Deque;
 import java.util.LinkedList;
 
@@ -223,6 +225,11 @@ public class SynmvJob {
 	 * true, when the job is being moved and the mouse button is still pressed.
 	 */
 	private boolean mouseHold = false;
+	
+	/**
+	 * true, when one job is being resized by mouse motion right now.
+	 */
+	private static boolean beingResized = false;
 	
 	/**
 	 * save already calculated offsets
@@ -503,8 +510,76 @@ public class SynmvJob {
 				
 			slots[i].add(textFields[i]);
 			
+			final int ii = i;
+			slots[i].addMouseMotionListener(new MouseMotionListener() {
+				private int grabbedSide = 0;
+				@Override
+				public void mouseMoved(MouseEvent e) {
+					if(ii > 0 && e.getPoint().x == 0) { //cursor on left bound
+						slots[ii].setCursor(Cursor.getPredefinedCursor(Cursor.E_RESIZE_CURSOR));
+						grabbedSide = -1;
+					}
+					else if(ii < slots.length-1 && e.getPoint().x == slots[ii].getWidth()-1) { //right bound
+						slots[ii].setCursor(Cursor.getPredefinedCursor(Cursor.W_RESIZE_CURSOR));
+						grabbedSide = 1;
+					}
+					else {
+						slots[ii].setCursor(Cursor.getDefaultCursor());
+						grabbedSide = 0;
+					}
+					beingResized = grabbedSide != 0;
+				}
+				
+				@Override
+				public void mouseDragged(MouseEvent e) {
+					beingResized = grabbedSide != 0;
+					
+					if(grabbedSide == -1) {
+						float diff = e.getX() / SynmvJob.factor;
+						diff = Math.min(times[ii], diff);
+						diff = Math.max(-times[ii-1], diff);
+						if(Math.abs(diff) < 1) {
+							return;
+						}
+						
+						times[ii] -= Math.round(diff);
+						times[ii-1] += Math.round(diff);
+						
+						slots[ii].setText("" + times[ii]);
+						textFields[ii].setText("" + times[ii]);
+						slots[ii-1].setText("" + times[ii-1]);
+						textFields[ii-1].setText("" + times[ii-1]);
+						
+						runCallback();
+					}
+					else if(grabbedSide == 1) {
+						float diff = (e.getX()-slots[ii].getWidth()+1) / SynmvJob.factor;
+						diff = Math.min(times[ii+1], diff);
+						diff = Math.max(-times[ii], diff);
+						if(Math.abs(diff) < 1) {
+							return;
+						}
+						
+						times[ii+1] -= Math.round(diff);
+						times[ii] += Math.round(diff);
+
+						slots[ii].setText("" + times[ii]);
+						textFields[ii].setText("" + times[ii]);
+						slots[ii+1].setText("" + times[ii+1]);
+						textFields[ii+1].setText("" + times[ii+1]);
+						
+						runCallback();
+					}
+				}
+			});
+			
+			
 			slots[i].addMouseListener(new MouseListener() {
 				public void mouseClicked(MouseEvent e) {
+					if(beingResized) {
+						return;
+					}
+					
 					if(e.getButton() == MouseEvent.BUTTON3 && chosen != null) {
 						SynmvJobSwapAction action = new SynmvJobSwapAction(chosen, SynmvJob.this);
 						action.run();
@@ -519,6 +594,10 @@ public class SynmvJob {
 	
 				@Override
 				public void mouseEntered(MouseEvent e) {
+					if(beingResized) {
+						return;
+					}
+					
 					mouseOver = SynmvJob.this;
 					for(JLabel slot: slots) {
 						slot.setBorder(new LineBorder(Color.RED));
@@ -536,6 +615,10 @@ public class SynmvJob {
 	
 				@Override
 				public void mouseExited(MouseEvent e) {
+					if(beingResized) {
+						return;
+					}
+					
 					if(mouseOver == SynmvJob.this) {
 						mouseOver = null;
 					}
@@ -546,6 +629,10 @@ public class SynmvJob {
 	
 				@Override
 				public void mousePressed(MouseEvent e) {
+					if(beingResized) {
+						return;
+					}
+					
 					if(e.getButton() == MouseEvent.BUTTON1) {
 						mouseHold = true;
 						if(chosen != null) {
@@ -564,6 +651,10 @@ public class SynmvJob {
 	
 				@Override
 				public void mouseReleased(MouseEvent e) {
+					if(beingResized) {
+						return;
+					}
+					
 					if(!SynmvJob.continuousShift) {
 						if(chosen != null && chosen.mouseHold && mouseOver != null) {
 							SynmvJobShiftAction action = new SynmvJobShiftAction(chosen, mouseOver);
