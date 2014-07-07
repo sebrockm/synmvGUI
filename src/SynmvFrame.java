@@ -20,6 +20,7 @@ import java.util.LinkedList;
 import java.util.StringTokenizer;
 
 import javax.swing.ButtonGroup;
+import javax.swing.JCheckBox;
 import javax.swing.JCheckBoxMenuItem;
 import javax.swing.JFileChooser;
 import javax.swing.JFrame;
@@ -212,6 +213,11 @@ public class SynmvFrame extends JFrame {
 	 * An array of SynmvJobs that shall be displayed in the window.
 	 */
 	private SynmvJob[] jobs = new SynmvJob[0];
+	
+	/**
+	 * Array of check boxes that indicate whether the corresponding times can be transfered to neighbor times.
+	 */
+	private JCheckBox[] transferTimesCheckBoxes = new JCheckBox[0];
 	
 	/**
 	 * scroll pane
@@ -742,6 +748,36 @@ public class SynmvFrame extends JFrame {
 		writer.close();
 	}
 
+	/**
+	 * Initializes the transfer times check boxes.
+	 * That means they are placed into the jobcontainer and set to unchecked.
+	 * 
+	 * @param length
+	 * 			the size of the JCheckBox array
+	 */
+	private void initTransferTimesCheckBoxes(int length) {
+		transferTimesCheckBoxes = new JCheckBox[length];
+		SynmvJob.transferTimes = new boolean[length];
+		
+		for(int i = 0; i < length; i++) {
+			transferTimesCheckBoxes[i] = new JCheckBox();
+			transferTimesCheckBoxes[i].setVisible(true);
+			transferTimesCheckBoxes[i].setSize(transferTimesCheckBoxes[i].getPreferredSize());
+			jobcontainer.add(transferTimesCheckBoxes[i]);
+			
+			int y = SynmvJob.yOffset + i * SynmvJob.HEIGHT + (SynmvJob.HEIGHT - transferTimesCheckBoxes[i].getHeight()) / 2;
+			int x = (SynmvJob.xOffset - transferTimesCheckBoxes[i].getWidth()) / 2;
+			transferTimesCheckBoxes[i].setLocation(x, y);
+			
+			final int ii = i;
+			transferTimesCheckBoxes[i].addChangeListener(new ChangeListener() {
+				@Override
+				public void stateChanged(ChangeEvent arg0) {
+					SynmvJob.transferTimes[ii] = transferTimesCheckBoxes[ii].isSelected();
+				}
+			});
+		}
+	}
 
 	/**
 	 * Creates a new SynmvFrame.
@@ -856,12 +892,23 @@ public class SynmvFrame extends JFrame {
 								job.removeFromParent();
 							}
 						}
+						
+						if(transferTimesCheckBoxes != null) {
+							for(JCheckBox box : transferTimesCheckBoxes) {
+								if(box != null) {
+									jobcontainer.remove(box);
+								}
+							}
+						}
 					}
 					jobs = tmp;
 					
 					for(int i = 0; i < jobs.length; i++) {
 						jobs[i].addToParent();
 					}
+
+					initTransferTimesCheckBoxes(tmp[0].getMachineCount());
+					
 					SynmvJob.runCallback();
 				}
 			}

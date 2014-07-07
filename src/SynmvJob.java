@@ -116,6 +116,11 @@ public class SynmvJob {
 	public static boolean hasWeights = false;
 	
 	/**
+	 * Indicates whether a time can be transferred to neighbors.
+	 */
+	public static boolean[] transferTimes;
+	
+	/**
 	 * This Runnable is used as a callback that is invoked every time
 	 * the layout of the SynmvJobs among each other changes.
 	 * It shall calculate their new positions.
@@ -515,6 +520,10 @@ public class SynmvJob {
 				private int grabbedSide = 0;
 				@Override
 				public void mouseMoved(MouseEvent e) {
+					if(transferTimes == null || transferTimes.length != slots.length || !transferTimes[ii]) {
+						return;
+					}
+					
 					if(ii > 0 && e.getPoint().x == 0) { //cursor on left bound
 						slots[ii].setCursor(Cursor.getPredefinedCursor(Cursor.E_RESIZE_CURSOR));
 						grabbedSide = -1;
@@ -528,10 +537,17 @@ public class SynmvJob {
 						grabbedSide = 0;
 					}
 					beingResized = grabbedSide != 0;
+					for(JLabel slot: slots) {
+						slot.setBorder(new LineBorder(Color.RED));
+					}
 				}
 				
 				@Override
 				public void mouseDragged(MouseEvent e) {
+					if(transferTimes == null || transferTimes.length != slots.length || !transferTimes[ii]) {
+						return;
+					}
+					
 					beingResized = grabbedSide != 0;
 					
 					if(grabbedSide == -1) {
@@ -615,15 +631,16 @@ public class SynmvJob {
 	
 				@Override
 				public void mouseExited(MouseEvent e) {
+					for(JLabel slot: slots) {
+						slot.setBorder(new LineBorder(Color.DARK_GRAY));
+					}
+					
 					if(beingResized) {
 						return;
 					}
 					
 					if(mouseOver == SynmvJob.this) {
 						mouseOver = null;
-					}
-					for(JLabel slot: slots) {
-						slot.setBorder(new LineBorder(Color.DARK_GRAY));
 					}
 				}
 	
