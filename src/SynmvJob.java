@@ -118,7 +118,7 @@ public class SynmvJob {
 	/**
 	 * Indicates whether a time can be transferred to neighbors.
 	 */
-	public static boolean[] transferTimes;
+	public static boolean[] splitTimes;
 	
 	/**
 	 * This Runnable is used as a callback that is invoked every time
@@ -520,15 +520,21 @@ public class SynmvJob {
 				private int grabbedSide = 0;
 				@Override
 				public void mouseMoved(MouseEvent e) {
-					if(transferTimes == null || transferTimes.length != slots.length || !transferTimes[ii]) {
+					if(splitTimes == null || splitTimes.length != slots.length - 1) {
 						return;
 					}
 					
 					if(ii > 0 && e.getPoint().x == 0) { //cursor on left bound
+						if(!splitTimes[ii-1]) {
+							return;
+						}
 						slots[ii].setCursor(Cursor.getPredefinedCursor(Cursor.E_RESIZE_CURSOR));
 						grabbedSide = -1;
 					}
 					else if(ii < slots.length-1 && e.getPoint().x == slots[ii].getWidth()-1) { //right bound
+						if(!splitTimes[ii]) {
+							return;
+						}
 						slots[ii].setCursor(Cursor.getPredefinedCursor(Cursor.W_RESIZE_CURSOR));
 						grabbedSide = 1;
 					}
@@ -544,13 +550,16 @@ public class SynmvJob {
 				
 				@Override
 				public void mouseDragged(MouseEvent e) {
-					if(transferTimes == null || transferTimes.length != slots.length || !transferTimes[ii]) {
+					if(splitTimes == null || splitTimes.length != slots.length - 1) {
 						return;
 					}
 					
 					beingResized = grabbedSide != 0;
 					
 					if(grabbedSide == -1) {
+						if(!splitTimes[ii-1]) {
+							return;
+						}
 						float diff = e.getX() / SynmvJob.factor;
 						diff = Math.min(times[ii], diff);
 						diff = Math.max(-times[ii-1], diff);
@@ -569,6 +578,9 @@ public class SynmvJob {
 						runCallback();
 					}
 					else if(grabbedSide == 1) {
+						if(!splitTimes[ii]) {
+							return;
+						}
 						float diff = (e.getX()-slots[ii].getWidth()+1) / SynmvJob.factor;
 						diff = Math.min(times[ii+1], diff);
 						diff = Math.max(-times[ii], diff);

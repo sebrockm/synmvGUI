@@ -215,9 +215,9 @@ public class SynmvFrame extends JFrame {
 	private SynmvJob[] jobs = new SynmvJob[0];
 	
 	/**
-	 * Array of check boxes that indicate whether the corresponding times can be transfered to neighbor times.
+	 * Array of check boxes that indicate whether the corresponding times can be split to neighbor times.
 	 */
-	private JCheckBox[] transferTimesCheckBoxes = new JCheckBox[0];
+	private JCheckBox[] splitTimesCheckBoxes = new JCheckBox[0];
 	
 	/**
 	 * scroll pane
@@ -749,31 +749,31 @@ public class SynmvFrame extends JFrame {
 	}
 
 	/**
-	 * Initializes the transfer times check boxes.
+	 * Initializes the split times check boxes.
 	 * That means they are placed into the jobcontainer and set to unchecked.
 	 * 
 	 * @param length
-	 * 			the size of the JCheckBox array
+	 * 			the size of the JCheckBox array, must be one less than the number of machines of the jobs
 	 */
-	private void initTransferTimesCheckBoxes(int length) {
-		transferTimesCheckBoxes = new JCheckBox[length];
-		SynmvJob.transferTimes = new boolean[length];
+	private void initSplitTimesCheckBoxes(int length) {
+		splitTimesCheckBoxes = new JCheckBox[length];
+		SynmvJob.splitTimes = new boolean[length];
 		
 		for(int i = 0; i < length; i++) {
-			transferTimesCheckBoxes[i] = new JCheckBox();
-			transferTimesCheckBoxes[i].setVisible(true);
-			transferTimesCheckBoxes[i].setSize(transferTimesCheckBoxes[i].getPreferredSize());
-			jobcontainer.add(transferTimesCheckBoxes[i]);
+			splitTimesCheckBoxes[i] = new JCheckBox();
+			splitTimesCheckBoxes[i].setVisible(true);
+			splitTimesCheckBoxes[i].setSize(splitTimesCheckBoxes[i].getPreferredSize());
+			jobcontainer.add(splitTimesCheckBoxes[i]);
 			
-			int y = SynmvJob.yOffset + i * SynmvJob.HEIGHT + (SynmvJob.HEIGHT - transferTimesCheckBoxes[i].getHeight()) / 2;
-			int x = (SynmvJob.xOffset - transferTimesCheckBoxes[i].getWidth()) / 2;
-			transferTimesCheckBoxes[i].setLocation(x, y);
+			int y = SynmvJob.yOffset + (i+1) * SynmvJob.HEIGHT - splitTimesCheckBoxes[i].getHeight()/2;
+			int x = (SynmvJob.xOffset - splitTimesCheckBoxes[i].getWidth()) / 2;
+			splitTimesCheckBoxes[i].setLocation(x, y);
 			
 			final int ii = i;
-			transferTimesCheckBoxes[i].addChangeListener(new ChangeListener() {
+			splitTimesCheckBoxes[i].addChangeListener(new ChangeListener() {
 				@Override
 				public void stateChanged(ChangeEvent arg0) {
-					SynmvJob.transferTimes[ii] = transferTimesCheckBoxes[ii].isSelected();
+					SynmvJob.splitTimes[ii] = splitTimesCheckBoxes[ii].isSelected();
 				}
 			});
 		}
@@ -893,8 +893,8 @@ public class SynmvFrame extends JFrame {
 							}
 						}
 						
-						if(transferTimesCheckBoxes != null) {
-							for(JCheckBox box : transferTimesCheckBoxes) {
+						if(splitTimesCheckBoxes != null) {
+							for(JCheckBox box : splitTimesCheckBoxes) {
 								if(box != null) {
 									jobcontainer.remove(box);
 								}
@@ -907,7 +907,7 @@ public class SynmvFrame extends JFrame {
 						jobs[i].addToParent();
 					}
 
-					initTransferTimesCheckBoxes(tmp[0].getMachineCount());
+					initSplitTimesCheckBoxes(tmp[0].getMachineCount()-1);
 					
 					SynmvJob.runCallback();
 				}
