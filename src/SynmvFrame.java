@@ -361,6 +361,9 @@ public class SynmvFrame extends JFrame {
 	 * 			if the schedule is not valid. 
 	 */
 	private ArrayList<Integer> readSchedule(String line, int n, String filename, int lineNo) throws InvalidFileFormatException {
+		while(line.startsWith("#")) {
+			line = line.substring(1);
+		}
 		line = line.trim();
 		StringTokenizer tok = new StringTokenizer(line);
 		if(tok.countTokens() != n) {
@@ -712,17 +715,6 @@ public class SynmvFrame extends JFrame {
 			writer.newLine();
 		}
 		
-		//write schedule
-		writer.newLine();
-		writer.write(SCHEDULE_INDICATOR);
-		writer.newLine();
-		SynmvJob tmp = jobs[0].getFirstPredecessor();
-		while(tmp != null) {
-			writer.write(tmp.getID() + " ");
-			tmp = tmp.getNext();
-		}
-		writer.newLine();
-		
 		//write due dates
 		if(SynmvJob.hasDuedates) {
 			writer.newLine();
@@ -743,6 +735,18 @@ public class SynmvFrame extends JFrame {
 				writer.write(job.getID() + " " + job.getWeight());
 				writer.newLine();
 			}
+		}
+		
+		
+		//write schedule
+		writer.newLine();
+		writer.write(SCHEDULE_INDICATOR);
+		writer.newLine();
+		SynmvJob tmp = jobs[0].getFirstPredecessor();
+		writer.write("# ");
+		while(tmp != null) {
+			writer.write(tmp.getID() + " ");
+			tmp = tmp.getNext();
 		}
 		
 		writer.close();
